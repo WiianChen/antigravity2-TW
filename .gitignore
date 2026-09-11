@@ -1,5 +1,8 @@
 scratch/
 _temp_asar/
+build_app/
+套用繁體中文化.command
+還原官方英文.command
 node_modules/
 .DS_Store
 AGENTS.md

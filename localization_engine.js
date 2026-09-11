@@ -299,11 +299,11 @@ function generateJs() {
                 } else if (/^The Spanner remote/i.test(valNorm)) {
                     newVal = USE_TW ? "Spanner 遠端 MCP 伺服器可讓您從 AI 開發環境中存取並執行 Spanner 工具，以建立、管理和查詢分散式資料庫資源。" : "Spanner 远程 MCP 服务器可让您从 AI 开发环境中访问并运行 Spanner 工具，以创建、管理和查询分布式数据库资源。";
                 } else if (/^Ask questions\.\s*Get answers\./i.test(valNorm) || /PostHog data/i.test(valNorm)) {
-                    newVal = USE_TW ? "提問，即得答案。該 MCP 是供您的編程代理呼叫的伺服器。用英語提出問題，它會針對您的 PostHog 資料執行查詢，結果將直接呈現在您的編輯器中。" : "提问，即得答案。该 MCP 是供您的编程智能体调用的服务器。用英语提出问题，它会针对您的 PostHog 数据运行查询，结果将直接呈现在您的编辑器中。";
+                    newVal = USE_TW ? "提問，即得答案。該 MCP 是供您的程式設計代理呼叫的伺服器。用英語提出問題，它會針對您的 PostHog 資料執行查詢，結果將直接呈現在您的編輯器中。" : "提问，即得答案。该 MCP 是供您的编程智能体调用的服务器。用英语提出问题，它会针对您的 PostHog 数据运行查询，结果将直接呈现在您的编辑器中。";
                 } else if (/^The GKE remote MCP server/i.test(valNorm)) {
                     newVal = USE_TW ? "GKE 遠端 MCP 伺服器提供對 GKE Kubernetes 資源的讀寫存取權限。允許 AI 代理檢查並監控您的執行環境。" : "GKE 远程 MCP 服务器提供对 GKE Kubernetes 资源的读写权限。允许 AI 智能体检查并监控您的运行环境。";
                 } else if (/^Cloud CLI MCP Server/i.test(valNorm)) {
-                    newVal = USE_TW ? "Cloud CLI MCP 伺服器提供在遠端沙箱環境中執行 gcloud 與 bq CLI 命令的工具集。" : "Cloud CLI MCP 服务器提供在远程沙箱环境中运行 gcloud 与 bq CLI 命令的工具集。";
+                    newVal = USE_TW ? "Cloud CLI MCP 伺服器提供在遠端沙箱環境中執行 gcloud 與 bq CLI 指令的工具集。" : "Cloud CLI MCP 服务器提供在远程沙箱环境中运行 gcloud 与 bq CLI 命令的工具集。";
                 } else if (/^The Apigee API hub remote MCP server/i.test(valNorm)) {
                     newVal = USE_TW ? "Apigee API hub 遠端 MCP 伺服器可讓您管理註冊在 Apigee API hub 中的 API、版本、規格、操作、部署、屬性、外部 API 以及相依性。" : "Apigee API hub 远程 MCP 服务器可让您管理注册在 Apigee API hub 中的 API、版本、规范、操作、部署、属性、外部 API 以及依赖项。";
                 } else if (/^The Google Home Developer MCP server/i.test(valNorm)) {
@@ -366,7 +366,7 @@ function generateJs() {
                     newVal = valNorm.replace(/^Show\\s+(\\d+)\\s+more(\\s+(results?|items?|commands?|options?))?(\\.\\.\\.|…)?$/i, (match, num, p2, type) => {
                         if (type) {
                             if (/result/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個結果...") : ("显示另外 " + num + " 个结果...");
-                            if (/command/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個命令...") : ("显示另外 " + num + " 个命令...");
+                            if (/command/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個指令...") : ("显示另外 " + num + " 个命令...");
                             if (/item/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個項目...") : ("显示另外 " + num + " 个项目...");
                             if (/option/i.test(type)) return USE_TW ? ("顯示另外 " + num + " 個選項...") : ("显示另外 " + num + " 个选项...");
                         }
@@ -399,11 +399,11 @@ function generateJs() {
                     });
                 } else if (/^(.+?): context deadline exceeded$/i.test(valNorm)) {
                     newVal = valNorm.replace(/^(.+?): context deadline exceeded$/i, (match, prefix) => {
-                        return prefix + (USE_TW ? ": 請求超時 (context deadline exceeded)" : ": 请求超时 (context deadline exceeded)");
+                        return prefix + (USE_TW ? ": 要求逾時 (context deadline exceeded)" : ": 请求超时 (context deadline exceeded)");
                     });
                 } else if (/^(.+?): i\\/o timeout$/i.test(valNorm)) {
                     newVal = valNorm.replace(/^(.+?): i\\/o timeout$/i, (match, prefix) => {
-                        return prefix + (USE_TW ? ": I/O 超時 (i/o timeout)" : ": I/O 超时 (i/o timeout)");
+                        return prefix + (USE_TW ? ": I/O 逾時 (i/o timeout)" : ": I/O 超时 (i/o timeout)");
                     });
                 } else if (/^Are you sure you want to delete (the |this )?project (.+?)\\??$/i.test(valNorm)) {
                     newVal = valNorm.replace(/^Are you sure you want to delete (the |this )?project (.+?)\\??$/i, (match, article, name) => {
@@ -795,12 +795,12 @@ function install20(resourcesDir) {
         'Help': '說明',
         'New Window': '開新視窗',
         'Create Project': '建立專案',
-        'Command Palette': '命令面板',
+        'Command Palette': '命令選擇區',
         'Docs': '說明文件',
         'Check for Updates': '檢查更新',
         'Toggle Developer Tools': '切換開發人員工具',
         'Undo': '復原',
-        'Redo': '取消復原',
+        'Redo': '重做',
         'Cut': '剪下',
         'Copy': '複製',
         'Paste': '貼上',
@@ -900,9 +900,9 @@ function install20(resourcesDir) {
         const replacementCreate = `function createTray(actions) {
     /* --- TRAY TRANSLATION START --- */
     const translations = ${USE_TW ? `{
-        'No agents running': '無執行中的智能體',
-        'Open Antigravity': '開啟反重力智能編程',
-        'Quit': '退出'
+        'No agents running': '無執行中的代理',
+        'Open Antigravity': '開啟 Antigravity',
+        'Quit': '結束'
     }` : `{
         'No agents running': '无运行中的智能体',
         'Open Antigravity': '打开反重力智能编程',
@@ -937,7 +937,7 @@ function install20(resourcesDir) {
         // 3. 使用正则替换 updateTrayAgentCount 里的动态显示文本
         const countRegex = /countItem\.label\s*=\s*\([\s\S]*?' running';/g;
         const replacementCount = USE_TW 
-            ? "countItem.label = count > 0 ? `${count} 個智能體執行中` : '無執行中的智能體';"
+            ? "countItem.label = count > 0 ? `${count} 個代理執行中` : '無執行中的代理';"
             : "countItem.label = count > 0 ? `${count} 个智能体运行中` : '无运行中的智能体';";
         trayPatched = trayPatched.replace(countRegex, replacementCount);
         
@@ -974,8 +974,8 @@ function install20(resourcesDir) {
                 buttons: ['OK'],`;
         const replacementOptions = USE_TW
             ? `                title: '檢查更新',
-                message: '暫無可用更新',
-                buttons: ['確定'],`
+                message: '目前沒有可用的更新',
+                buttons: ['好'],`
             : `                title: '检查更新',
                 message: '暂无可用更新',
                 buttons: ['确定'],`;
