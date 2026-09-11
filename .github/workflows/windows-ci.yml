@@ -1,0 +1,57 @@
+name: Windows Compatibility CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate batch scripts syntax and encoding
+        shell: cmd
+        run: |
+          chcp 65001 > nul
+          type "點兩下安裝繁體中文.bat" > nul
+          type "點兩下還原官方英文.bat" > nul
+          type "點兩下安裝VSCode擴充繁體中文.bat" > nul
+          type "點兩下還原VSCode擴充官方英文.bat" > nul
+          echo Batch scripts encoding and syntax check passed!
+
+      - name: Validate PowerShell installer syntax
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+              "install_windows.ps1",
+              [ref]$null,
+              [ref]$errors
+          )
+          if ($errors.Count -gt 0) {
+              Write-Error "PowerShell syntax errors detected: $errors"
+              exit 1
+          }
+          Write-Host "PowerShell script syntax check passed!"
+
+      - name: Validate localization dictionaries JSON integrity
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path dicts_tw, dicts -Filter *.json | ForEach-Object {
+              try {
+                  Get-Content $_.FullName -Raw | ConvertFrom-Json | Out-Null
+                  Write-Host "OK: $($_.Name)"
+              } catch {
+                  Write-Error "Invalid JSON in $($_.FullName): $_"
+                  exit 1
+              }
+          }

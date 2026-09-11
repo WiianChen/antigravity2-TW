@@ -105,6 +105,14 @@ curl -fsSL https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/ins
 - **隨時同步最新詞庫**：若需同步社群最新繁中字典與程式碼，在終端機再次執行同一行指令即可自動更新。
 - **本機快速執行**：若已下載本專案，亦可直接在目錄內執行 `bash install_macos_autowatcher.sh`。
 
+### 🪟 Windows 使用者一行指令安裝
+
+在 Windows 系統中，開啟 PowerShell 貼上下方一行指令即可自動下載並完成套用：
+
+```powershell
+irm https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/install_windows.ps1 | iex
+```
+
 ---
 
 ## 🔄 一鍵還原官方英文
