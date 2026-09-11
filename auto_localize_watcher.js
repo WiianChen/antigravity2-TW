@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Antigravity & VS Code 擴充套件 自動版本變化監控、自癒與繁體中文化守護程式 (v2.2 跨平台版)
+ * Antigravity IDE 自動版本變化監控、自癒與繁體中文化守護程式 (v3.0 桌面版專用)
  * 支援 macOS 與 Windows
  */
 
@@ -14,7 +14,6 @@ const IS_MAC = process.platform === 'darwin';
 const IS_WIN = process.platform === 'win32';
 
 const LOG_FILE = path.join(DIR, 'autolocalize.log');
-const EXTENSIONS_DIR = path.join(os.homedir(), '.vscode', 'extensions');
 
 function log(msg) {
     const time = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
@@ -58,27 +57,26 @@ function getCustomEnv() {
     });
 }
 
-function compareVersions(a, b) {
-    const getParts = (str) => {
-        const m = str.match(/google\.google-antigravity-(\d+)\.(\d+)\.(\d+)/);
-        return m ? m.slice(1).map(Number) : [0, 0, 0];
-    };
-    const vA = getParts(a);
-    const vB = getParts(b);
-    for (let i = 0; i < 3; i++) {
-        if (vB[i] !== vA[i]) {
-            return vB[i] - vA[i];
-        }
-    }
-    return b.localeCompare(a);
-}
-
 function getAppInfo() {
     if (IS_MAC) {
-        const appPath = '/Applications/Antigravity.app';
-        const asarPath = path.join(appPath, 'Contents', 'Resources', 'app.asar');
-        const appSupport = path.join(os.homedir(), 'Library', 'Application Support', 'Antigravity');
-        return { appPath, asarPath, appSupport };
+        const macCandidates = [
+            '/Applications/Antigravity.app',
+            '/Applications/Antigravity IDE.app',
+            path.join(os.homedir(), 'Applications', 'Antigravity.app'),
+            path.join(os.homedir(), 'Applications', 'Antigravity IDE.app')
+        ];
+        for (const cand of macCandidates) {
+            const asarPath = path.join(cand, 'Contents', 'Resources', 'app.asar');
+            if (fs.existsSync(asarPath)) {
+                const appSupport = path.join(os.homedir(), 'Library', 'Application Support', 'Antigravity');
+                return { appPath: cand, asarPath, appSupport };
+            }
+        }
+        // 若尚未生成 app.asar 亦回傳預設路徑以利建置
+        const defaultApp = '/Applications/Antigravity.app';
+        const defaultAsar = path.join(defaultApp, 'Contents', 'Resources', 'app.asar');
+        const defaultSupport = path.join(os.homedir(), 'Library', 'Application Support', 'Antigravity');
+        return { appPath: defaultApp, asarPath: defaultAsar, appSupport: defaultSupport };
     } else if (IS_WIN) {
         const candidates = [
             process.env.ANTIGRAVITY_INSTALL_DIR,
@@ -210,50 +208,6 @@ function checkAndLocalizeApp(appInfo) {
     return false;
 }
 
-function checkAndLocalizeVsCodeExtension() {
-    if (!fs.existsSync(EXTENSIONS_DIR)) {
-        return false;
-    }
-
-    const entries = fs.readdirSync(EXTENSIONS_DIR);
-    const matches = entries
-        .filter(name => name.startsWith('google.google-antigravity-'))
-        .sort(compareVersions);
-
-    if (matches.length === 0) {
-        return false;
-    }
-
-    const latestExtDir = path.join(EXTENSIONS_DIR, matches[0]);
-    const pkgPath = path.join(latestExtDir, 'package.json');
-    const extJsPath = path.join(latestExtDir, 'extension.js');
-
-    if (!fs.existsSync(pkgPath)) {
-        return false;
-    }
-
-    const pkgContent = fs.readFileSync(pkgPath, 'utf8');
-    let isLocalized = pkgContent.includes('聚焦 Antigravity 面板');
-    if (fs.existsSync(extJsPath)) {
-        const extContent = fs.readFileSync(extJsPath, 'utf8');
-        if (!extContent.includes('重新載入視窗')) {
-            isLocalized = false;
-        }
-    }
-
-    if (!isLocalized) {
-        log(`⚡ 偵測到 VS Code 擴充套件更新或未完全中文化 (${matches[0]})，啟動自動中文化...`);
-        const localizeScript = path.join(DIR, 'localize_vscode_extension.js');
-        const customEnv = getCustomEnv();
-        execSync(`"${process.execPath}" "${localizeScript}"`, { cwd: DIR, stdio: 'inherit', env: customEnv });
-
-        log(`🎉 VS Code 擴充套件 (${matches[0]}) 自動繁體中文化已完成！`);
-        notify('Antigravity 自動中文化', `偵測到 VS Code 擴充套件更新 (${matches[0]})，已自動完成繁體中文化！`);
-        return true;
-    }
-    return false;
-}
-
 function main() {
     if (fs.existsSync(path.join(DIR, '.disable_autowatcher'))) {
         log('ℹ️ 偵測到停用標記檔 (.disable_autowatcher)，略過本次自動檢查。');
@@ -262,10 +216,9 @@ function main() {
     try {
         const appInfo = getAppInfo();
         const appChanged = checkAndLocalizeApp(appInfo);
-        const extChanged = checkAndLocalizeVsCodeExtension();
 
-        if (!appChanged && !extChanged) {
-            // 静默安全日誌
+        if (!appChanged) {
+            // 靜默安全日誌
         }
     } catch (err) {
         log(`❌ 自動中文化監控執行異常: ${err.message}`);

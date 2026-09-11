@@ -211,10 +211,25 @@ function main() {
     const args = process.argv.slice(2);
     const isRestore = args.includes('--restore');
 
+    if (!isRestore) {
+        console.log(`==========================================================`);
+        console.log(`  Google Antigravity VS Code 擴充套件 - 停止支援公告`);
+        console.log(`==========================================================`);
+        console.log(`⚠️ 本專案已全面聚焦「Antigravity IDE 獨立桌面版」，已停止支援 VS Code 擴充套件。`);
+        console.log(`   原因：VS Code 擴充套件核心介面（設定與對話面板）由本地閉源二進位檔 (agy)`);
+        console.log(`   透過跨來源 iframe 動態渲染，無法達成 100% 繁中化，且雙重環境易引發連線衝突。`);
+        console.log(``);
+        console.log(`💡 建議方式：請直接使用「Antigravity 2.0 獨立桌面版」以享有完整繁中體驗。`);
+        console.log(`🔄 若需還原已修改之 VS Code 擴充套件為官方原版英文，請加上 --restore 參數：`);
+        console.log(`   node localize_vscode_extension.js --restore`);
+        console.log(`==========================================================`);
+        return;
+    }
+
     try {
         const extDir = findExtensionDir();
         console.log(`==========================================================`);
-        console.log(`  Google Antigravity VS Code 擴充套件繁體中文化工具`);
+        console.log(`  Google Antigravity VS Code 擴充套件官方英文還原工具`);
         console.log(`==========================================================`);
         console.log(`目標目錄：${extDir}`);
 
@@ -222,11 +237,7 @@ function main() {
         localizeExtensionJs(extDir, isRestore);
 
         console.log(`==========================================================`);
-        if (isRestore) {
-            console.log(`🎉 擴充套件已成功還原為官方英文原版！請重啟 VS Code。`);
-        } else {
-            console.log(`🎉 恭喜！VS Code 擴充套件繁體中文化已完成。請重啟 VS Code！`);
-        }
+        console.log(`🎉 擴充套件已成功還原為官方英文原版！請重啟 VS Code。`);
         console.log(`==========================================================`);
     } catch (err) {
         console.error(`❌ 執行失敗：`, err.message);

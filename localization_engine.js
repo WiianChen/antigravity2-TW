@@ -596,7 +596,8 @@ function detectInstallationDir(manualDir) {
         return fs.existsSync(path.join(candidate, "resources", "app.asar")) ||
             fs.existsSync(path.join(candidate, "app.asar")) ||
             fs.existsSync(path.join(candidate, "Contents", "Resources", "app.asar")) ||
-            fs.existsSync(path.join(candidate, "resources", "app", "product.json"));
+            fs.existsSync(path.join(candidate, "resources", "app", "product.json")) ||
+            fs.existsSync(path.join(candidate, "Contents", "Resources", "app", "product.json"));
     };
 
     if (process.platform === 'win32') {
@@ -638,7 +639,9 @@ function detectInstallationDir(manualDir) {
         }
     } else if (process.platform === 'darwin') {
         addCandidate("/Applications/Antigravity.app");
+        addCandidate("/Applications/Antigravity IDE.app");
         addCandidate(path.join(process.env.HOME || '', 'Applications', 'Antigravity.app'));
+        addCandidate(path.join(process.env.HOME || '', 'Applications', 'Antigravity IDE.app'));
     }
 
     for (const p of candidates) {
@@ -797,7 +800,9 @@ function install20(resourcesDir) {
     // 2. 临时提取目录
     const tempDir = path.join(__dirname, "_temp_asar");
     if (fs.existsSync(tempDir)) {
-        fs.rmSync(tempDir, { recursive: true, force: true });
+        try {
+            fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+        } catch (e) {}
     }
 
     console.log(`[解包] 正在使用 npx 提取 app.asar...`);
@@ -1044,7 +1049,11 @@ function install20(resourcesDir) {
     const packRes = runCommandSync(`npx -y @electron/asar pack "${tempDir}" "${asarPath}"`);
     
     // 5. 清理临时文件夹
-    fs.rmSync(tempDir, { recursive: true, force: true });
+    try {
+        fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    } catch (e) {
+        // 非致命清理錯誤不中斷主流程
+    }
 
     if (!packRes.success) {
         console.error(`[错误] 打包失败。`);
@@ -1086,14 +1095,23 @@ function restore20(resourcesDir) {
 // ==========================================
 // Antigravity 1.0 汉化引擎 (旧版 HTML 注入模式)
 // ==========================================
-const OLD_TARGET_FILES = [
-    path.join("resources", "app", "out", "vs", "code", "electron-browser", "workbench", "workbench-jetski-agent.html"),
-    path.join("resources", "app", "out", "vs", "code", "electron-browser", "workbench", "workbench.html")
-];
+function getAppResourcesBase(installDir) {
+    if (fs.existsSync(path.join(installDir, "Contents", "Resources", "app"))) {
+        return path.join(installDir, "Contents", "Resources");
+    }
+    return path.join(installDir, "resources");
+}
+
+function getOldTargetFiles(installDir) {
+    const base = getAppResourcesBase(installDir);
+    return [
+        path.join(base, "app", "out", "vs", "code", "electron-browser", "workbench", "workbench-jetski-agent.html"),
+        path.join(base, "app", "out", "vs", "code", "electron-browser", "workbench", "workbench.html")
+    ];
+}
 
 function backupFiles10(installDir) {
-    for (const relPath of OLD_TARGET_FILES) {
-        const absPath = path.join(installDir, relPath);
+    for (const absPath of getOldTargetFiles(installDir)) {
         const bakPath = absPath + ".bak";
         if (fs.existsSync(absPath) && !fs.existsSync(bakPath)) {
             fs.copyFileSync(absPath, bakPath);
@@ -1102,8 +1120,7 @@ function backupFiles10(installDir) {
     }
 }
 
-function injectHtml10(installDir, htmlRelPath) {
-    const absPath = path.join(installDir, htmlRelPath);
+function injectHtml10(absPath) {
     if (!fs.existsSync(absPath)) return false;
     
     let content = fs.readFileSync(absPath, 'utf-8');
@@ -1122,15 +1139,17 @@ function injectHtml10(installDir, htmlRelPath) {
 }
 
 function updateChecksums10(installDir) {
-    const productJsonPath = path.join(installDir, "resources", "app", "product.json");
+    const base = getAppResourcesBase(installDir);
+    const productJsonPath = path.join(base, "app", "product.json");
     if (!fs.existsSync(productJsonPath)) return;
     
     const data = JSON.parse(fs.readFileSync(productJsonPath, 'utf-8'));
+    if (!data.checksums) data.checksums = {};
     
-    for (const relPath of OLD_TARGET_FILES) {
-        const absPath = path.join(installDir, relPath);
+    for (const absPath of getOldTargetFiles(installDir)) {
         if (fs.existsSync(absPath)) {
-            const key = relPath.replace(/\\/g, "/").replace("resources/app/out/", "");
+            const outPrefix = path.join(base, "app", "out") + path.sep;
+            const key = absPath.replace(outPrefix, "").replace(/\\/g, "/");
             
             const fileBuffer = fs.readFileSync(absPath);
             const hash = crypto.createHash('sha256').update(fileBuffer).digest();
@@ -1146,14 +1165,15 @@ function install10(installDir) {
     backupFiles10(installDir);
     
     // 生成单独的 js 汉化文件
-    const hanhuaJsPath = path.join(installDir, "resources", "app", "out", "ag_agent_hanhua.js");
+    const base = getAppResourcesBase(installDir);
+    const hanhuaJsPath = path.join(base, "app", "out", "ag_agent_hanhua.js");
     fs.mkdirSync(path.dirname(hanhuaJsPath), { recursive: true });
     
     const jsContent = generateJs();
     fs.writeFileSync(hanhuaJsPath, jsContent, 'utf-8');
         
-    for (const html of OLD_TARGET_FILES) {
-        if (injectHtml10(installDir, html)) {
+    for (const html of getOldTargetFiles(installDir)) {
+        if (injectHtml10(html)) {
             console.log(`[√] 注入成功: ${path.basename(html)}`);
         }
     }
@@ -1167,8 +1187,7 @@ function install10(installDir) {
 function restore10(installDir) {
     console.log("====== 正在恢复 Antigravity 1.0 官方原版 ======");
     let changed = false;
-    for (const relPath of OLD_TARGET_FILES) {
-        const absPath = path.join(installDir, relPath);
+    for (const absPath of getOldTargetFiles(installDir)) {
         const bakPath = absPath + ".bak";
         if (fs.existsSync(bakPath)) {
             fs.copyFileSync(bakPath, absPath);
@@ -1178,7 +1197,8 @@ function restore10(installDir) {
         }
     }
     
-    const hanhuaJsPath = path.join(installDir, "resources", "app", "out", "ag_agent_hanhua.js");
+    const base = getAppResourcesBase(installDir);
+    const hanhuaJsPath = path.join(base, "app", "out", "ag_agent_hanhua.js");
     if (fs.existsSync(hanhuaJsPath)) {
         fs.unlinkSync(hanhuaJsPath);
         console.log(`[还原] 已删除汉化脚本`);

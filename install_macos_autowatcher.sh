@@ -51,7 +51,8 @@ cat << PLIST_EOF > "$TARGET_PLIST"
     <array>
         <string>/Applications/Antigravity.app/Contents/Info.plist</string>
         <string>/Applications/Antigravity.app/Contents/Resources/app.asar</string>
-        <string>${HOME}/.vscode/extensions</string>
+        <string>/Applications/Antigravity IDE.app/Contents/Info.plist</string>
+        <string>/Applications/Antigravity IDE.app/Contents/Resources/app.asar</string>
     </array>
     <key>StartInterval</key>
     <integer>1800</integer>
@@ -73,6 +74,6 @@ launchctl load "$TARGET_PLIST"
 
 echo "🎉 守護服務已成功安裝並啟動！"
 echo "服務工作目錄：$DIR"
-echo "日後 Antigravity 或 VS Code 擴充套件更新時，將自動於背景為新版本重新完成繁體中文化。"
+echo "日後 Antigravity IDE 官方更新時，將自動於背景為新版本重新完成繁體中文化。"
 echo "若日後需拉取最新繁中字典與程式碼，只需在終端機再次執行相同指令即可自動同步！"
 echo "=========================================================="

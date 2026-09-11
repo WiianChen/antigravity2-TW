@@ -36,8 +36,8 @@
 1. **同步備份檔案**：偵測官方發布新版本時，自動將全新英文包同步備份為 `app.asar.bak`，避免還原時退回舊版。
 2. **清理執行快取**：資源注入後自動清空 Electron 的 `Cache`、`Code Cache` 與 `GPUCache`，排除舊版快取干擾。
 3. **移除隔離屬性**：自動清除 macOS quarantine 屬性並重新進行本機 ad-hoc 簽署，降低系統安全性阻擋提示。
-4. **支援雙重環境**：同步支援獨立桌面版 IDE 與 Visual Studio Code 官方擴充套件（`google.google-antigravity`）。
-5. **常駐背景守護**：提供 macOS `launchd` 原生守護服務，版本更動時自動於背景重編注入。
+4. **專注桌面體驗**：全面聚焦 Antigravity 2.0 獨立桌面版 IDE 的完整繁體中文化；停止支援 VS Code 擴充套件以確保運作穩定。
+5. **常駐背景守護**：提供 macOS `launchd` 原生守護服務與 Windows 排程工作，官方版本更動時自動於背景重編注入。
 
 ---
 
@@ -79,39 +79,29 @@
 
 ---
 
-## 📊 環境支援度對照表
+## 📊 版本與架構支援說明
 
-本專案支援兩種不同的開發環境，其繁體中文化涵蓋範圍如下：
+Google Antigravity 發展歷程中包含不同產品形態，本專案的支援範疇與邊界說明如下：
 
-| 功能區塊 | 獨立桌面版（Antigravity 2.0） | VS Code 官方擴充套件（`google.google-antigravity`） |
-| :--- | :---: | :---: |
-| **主編輯視窗與新手導引** | 繁體中文支援 | —（依賴 VS Code 本體語系） |
-| **命令選擇區（Command Palette）** | 繁體中文支援 | 繁體中文支援（8 組專屬指令） |
-| **擴充套件設定註釋（Settings UI）** | 繁體中文支援 | 繁體中文支援（各項設定參數說明） |
-| **程式碼審查建議按鈕（CodeLens）** | 繁體中文支援 | 繁體中文支援（「接受／拒絕」按鈕與動作） |
-| **彈出通知與連線狀態** | 繁體中文支援 | 繁體中文支援（提示對話框） |
-| **macOS 系統頂部選單** | 繁體中文支援 | —（VS Code 原生選單管理） |
-| **內嵌設定頁（`jetski.settingsEditor`）** | 繁體中文支援 | 官方原版英文（本機二進位服務動態提供） |
-| **對話面板（Chat Panel）內部** | 繁體中文支援 | 官方原版英文（本機二進位服務動態提供） |
-| **跨版本自動守護與自癒** | 支援（LaunchAgents / 排程） | 支援（更新後自動巡檢重套） |
-
-> 📌 **驗證基準環境**：已於 macOS 與 Windows 實測驗證 Antigravity 桌面版 2.12.x 及 VS Code 擴充套件 1.3.0。如遇官方大版本結構調整，引擎將進行防護略過。
+| 版本／形態 | 架構類型 | 應用程式路徑／識別名稱 | 繁體中文支援狀態 | 說明與建議 |
+| :--- | :--- | :--- | :---: | :--- |
+| **Antigravity 2.0 桌面端** | 獨立 Electron 客戶端（官方主流） | `/Applications/Antigravity.app`<br>`Programs\Antigravity` | **完整支援（100%）** | 主編輯介面、新手導引、偏好設定面板、MCP 知識庫與選單全介面繁體中文化；支援背景自動守護自癒。 |
+| **Antigravity 1.0 桌面端** | 舊版 VS Code Fork 客製 IDE | `/Applications/Antigravity IDE.app`<br>`Programs\Antigravity` | **基礎相容（建議升級）** | 早期 HTML 腳本注入架構。本專案保留相容偵測邏輯，但因 Google 官方已停止維護 1.0 且全線轉移至 2.0，強烈建議使用者升級至 2.0 取得完整繁中體驗。 |
+| **VS Code 官方外掛** | VS Code 擴充套件（`google.google-antigravity`） | `~/.vscode/extensions/google.google-antigravity-*` | **已停止支援** | 核心設定與對話側邊欄由本地閉源二進位檔（`agy`）動態透過 iframe 輸出，無法全介面繁中化，且背景連線易受干擾。專案已全面終止支援。 |
 
 ---
 
-## 💻 VS Code 官方擴充套件中文化說明
+## 💻 關於 VS Code 擴充套件的停止支援說明
 
-若您在 Visual Studio Code 中安裝了 `Google Antigravity` 官方擴充套件：
+若您先前曾在 Visual Studio Code 中安裝過本專案的擴充套件中文化：
 
-- **繁體中文涵蓋範圍**：命令選擇區的 8 組專屬指令、VS Code 設定面板中的 Antigravity 參數註釋、編輯器內建議變更的「接受／拒絕」按鈕（CodeLens），以及連線狀態對話框。
-- **架構說明**：Antigravity 在 VS Code 中的「內嵌設定面板」與「對話側邊欄」由 Google 本機執行檔（`~/.gemini/bin/agy`）透過獨立 iframe 動態渲染。受限於瀏覽器跨來源安全隔離機制（Same-Origin Policy），該內嵌網頁維持官方原版英文。若需要全介面繁體中文環境，建議使用「Antigravity 2.0 獨立桌面版」。
-
-### 操作步驟：
-1. 確保 Visual Studio Code 處於開啟或關閉狀態皆可。
-2. 在本專案資料夾內執行：
-   - **macOS 使用者**：點兩下執行 **`點兩下安裝VSCode擴充繁體中文.command`**。
-   - **Windows 使用者**：點兩下執行 **`點兩下安裝VSCode擴充繁體中文.bat`**。
-3. 重新啟動 VS Code，按 `Ctrl+P`（macOS 為 `Cmd+Shift+P`）輸入 `> Antigravity`，即可享受外殼繁中化指令環境！
+1. **停止支援原因**：
+   - Antigravity VS Code 擴充套件核心對話介面與設定面板，底層係由 Google 本機執行檔（`~/.gemini/bin/agy`）透過動態 HTTP 服務及 iframe 渲染，受限於同源安全政策無法達成真正全介面繁中化。
+   - 雙重背景服務與帳號切換外掛（例如 Cockpit）可能造成 Token 遺失或觸發 WebSocket 連線逾時，增加使用不穩定性。
+2. **還原官方英文方法**：
+   - **macOS 使用者**：點兩下執行 **`點兩下還原VSCode擴充官方英文.command`**（或於終端機執行 `node localize_vscode_extension.js --restore`）。
+   - **Windows 使用者**：點兩下執行 **`點兩下還原VSCode擴充官方英文.bat`**（或於命令提示字元執行 `node localize_vscode_extension.js --restore`）。
+   - 執行後將還原官方原版 `package.json` 與 `extension.js`，重啟 VS Code 即可乾淨復原。
 
 ---
 

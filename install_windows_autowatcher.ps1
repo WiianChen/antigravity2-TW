@@ -52,7 +52,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "工作名稱：$taskName"
     Write-Host "守護工作目錄：$workDir"
     Write-Host "執行頻率：每 30 分鐘於背景自動巡檢一次"
-    Write-Host "日後 Antigravity 或 VS Code 擴充套件更新時，將自動於背景重新套用繁體中文。"
+    Write-Host "日後 Antigravity IDE 官方更新時，將自動於背景重新套用繁體中文。"
     Write-Host "==========================================================" -ForegroundColor Cyan
 } else {
     Write-Host "❌ 註冊排程工作失敗，請嘗試以系統管理員身分開啟 PowerShell 重新執行。" -ForegroundColor Red
