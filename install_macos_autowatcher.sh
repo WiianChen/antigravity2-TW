@@ -1,12 +1,28 @@
 #!/bin/bash
 set -e
-DIR="$(cd "$(dirname "$0")" && pwd)"
-PLIST_NAME="com.antigravity.autolocalize.plist"
-TARGET_PLIST="$HOME/Library/LaunchAgents/$PLIST_NAME"
+REPO_URL="https://github.com/atonnyshen/antigravity2-TW.git"
+DEFAULT_INSTALL_DIR="$HOME/.antigravity2-TW"
 
 echo "=========================================================="
 echo "    Antigravity macOS 背景自動更新守護服務安裝工具"
 echo "=========================================================="
+
+if [ -f "$(pwd)/auto_localize_watcher.js" ]; then
+    DIR="$(pwd)"
+elif [ -f "$(dirname "$0")/auto_localize_watcher.js" ] 2>/dev/null; then
+    DIR="$(cd "$(dirname "$0")" && pwd)"
+else
+    echo "⚡ 偵測到直接透過網路執行，正在下載或更新專案至 $DEFAULT_INSTALL_DIR ..."
+    if [ -d "$DEFAULT_INSTALL_DIR/.git" ]; then
+        git -C "$DEFAULT_INSTALL_DIR" pull --ff-only 2>/dev/null || true
+    else
+        git clone "$REPO_URL" "$DEFAULT_INSTALL_DIR"
+    fi
+    DIR="$DEFAULT_INSTALL_DIR"
+fi
+
+PLIST_NAME="com.antigravity.autolocalize.plist"
+TARGET_PLIST="$HOME/Library/LaunchAgents/$PLIST_NAME"
 
 NODE_BIN="$(which node || echo "/usr/local/bin/node")"
 
@@ -48,5 +64,7 @@ launchctl unload "$TARGET_PLIST" 2>/dev/null || true
 launchctl load "$TARGET_PLIST"
 
 echo "🎉 守護服務已成功安裝並啟動！"
+echo "服務工作目錄：$DIR"
 echo "日後 Antigravity 或 VS Code 擴充套件更新時，將自動於背景為新版本重新完成繁體中文化。"
+echo "若日後需拉取最新繁中字典與程式碼，只需在終端機再次執行相同指令即可自動同步！"
 echo "=========================================================="

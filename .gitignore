@@ -1,12 +1,6 @@
 scratch/
 _temp_asar/
 build_app/
-套用繁體中文化.command
-還原官方英文.command
-localize_vscode_extension.js
-套用VSCode擴充繁體中文化.command
-還原VSCode擴充官方英文.command
-auto_localize_watcher.js
 autolocalize.log
 node_modules/
 .DS_Store

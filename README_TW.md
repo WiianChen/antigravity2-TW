@@ -1,28 +1,51 @@
-# Antigravity 2.0 智能編程中文語言包 & 繁體中文引擎
+# Antigravity 台灣繁體中文在地化套件（antigravity2-TW）
 
-👉 **[簡體中文版說明文件 (Simplified Chinese README)](README.md)**
+> 專為台灣開發者校訂的 Google Antigravity 繁體中文（zh-TW）環境套件。  
+> 修正簡中轉譯錯誤，對齊 macOS 與 VS Code 繁體中文介面規範，支援版本更新自癒守護。
 
-> **支援系統**：Windows & macOS (均已內建一鍵指令碼)  
-> **匹配版本**：Antigravity v2.12.2  
-> **核心引擎**：Node.js (無需安裝 Python，零依賴，極速極穩)  
-> **中文化範圍**：包括軟體介面、頂部系統功能表、工作列右鍵選單、載入動畫、設定面板、新手引導及登入頁。  
-> **注入原理**：透過 ASAR 還原與打包，安全注入 `preload.js` 動態翻譯機制，絕不修改核心二進位檔案，一鍵安裝與完美還原。
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-blue.svg)](#-極速安裝指引)
+[![Locale](https://img.shields.io/badge/Locale-繁體中文%20(台灣%20zh--TW)-brightgreen.svg)](#-術語校訂對照)
+[![Antigravity](https://img.shields.io/badge/Antigravity-v2.12.2%2B%20Compatible-orange.svg)](#)
+[![VS Code Extension](https://img.shields.io/badge/VS%20Code-Extension%20Supported-purple.svg)](#-vs-code-官方擴充套件繁中化)
 
-> [!WARNING]
-> **關於聊天歷史記錄/對話方塊內容被中文化的已知問題及匹配機制說明（開發者必讀）**：
-> - **現象**：當你在聊天或對話方塊中發送了某些與軟體介面 UI 完全相同的英文關鍵詞或句子時，該對話氣泡在介面上可能會被翻譯引擎中文化顯示。
-> - **核心匹配機制**：
->   - **短詞（長度 <= 15 字元，如 `Knowledge`）**：翻譯僅在詞條 **完全精準匹配（且個別占一行）** 時觸發。如果該詞前後有其他任何字元、空格或標點符號（如 `Knowledge是什麼`、`哈哈 Knowledge`），則 **絕對不會** 被翻譯。如果需要強行阻止其翻譯，可使用中文雙引號將其包裹（如 `“Knowledge”`）即可完美規避。
->   - **長句（長度 > 15 字元，如 `Enable Antigravity to deploy apps...`）**：由於需要相容介面動態渲染，長句採用 **“子串滑動替換”** 算法。這意味著只要輸入的文字中包含了這一長串完整英文字句，該段子串就會被自動翻譯成中文（即使加了引號或前後帶有文字）。但由於長句匹配極其苛刻，必須一字不差（包括大小寫、標點和空格），因此實際聊天中幾乎不可能誤觸發。
-> - **說明**：這**不影響 AI 接收到的原文**。大模型取得的依舊是你發送的純正英文原始指令，僅在軟體的視覺渲染層面發生了中文化，純屬視覺影響，無需擔心影響大模型的效果。
-> - **歡迎提 PR**：由於 Electron 沙箱及 iframe webview DOM 樹隔離問題，此處難以直接利用主視窗類名隔離，期待有缘人提交 PR 完美解決該問題！
+👉 **[簡體中文版說明 (Simplified Chinese README)](README_CN.md)**
 
-## 📸 中文化效果展示
+---
 
-以下是部分功能板塊的實際中文化效果展示，涵蓋登入引導頁、主編輯器介面與詳細設定面板：
+## 📌 術語校訂對照
 
-### 1. 歡迎頁與登入新手引導
-![歡迎頁與登入新手引導](./showimg/showlogin_tw.png)
+本套件針對現有社群漢化包進行全量字典校訂，排除機器硬翻與非台灣標準軟體詞彙：
+
+| 原版簡中轉譯 | 台灣開發者標準繁體 | 校訂說明 |
+| :--- | :--- | :--- |
+| **中古文件資源** | **Firestore 資料庫中儲存的文件** | 修正將 Firestore documents 誤譯為歷史古物 |
+| **命令面板** | **命令選擇區** | 對齊 VS Code 繁體中文介面規範（Command Palette） |
+| **終端命令** | **終端機指令** | 對齊 macOS 終端機與台灣程式用語 |
+| **未配置計劃任務** | **未設定排程任務** | 修正排程與設定動賓搭配 |
+| **智能體** | **代理** | AI 領域標準稱呼（Agent） |
+| **本地** | **本機** | Local 對應本機標準用語 |
+| **Git 倉庫** | **Git 儲存庫** | Repository 正式繁體譯名 |
+| **可復用** | **可重複使用** | 還原自然中文語序 |
+| **暫無會話** | **尚無對話記錄** | 語意明確清晰 |
+| **確定** | **好** | 對齊 macOS 對話框標準按鈕名稱 |
+| **反重力智慧引擎** | **Antigravity** | 保留官方英文品牌標記，不破壞辨識度 |
+
+---
+
+## ⚙️ 核心機制
+
+1. **同步備份檔案**：偵測官方發布新版本時，自動將全新英文包同步備份為 `app.asar.bak`，避免還原時退回舊版。
+2. **清理執行快取**：資源注入後自動清空 Electron 的 `Cache`、`Code Cache` 與 `GPUCache`，排除舊版快取干擾。
+3. **解除隔離旗標**：自動清除 macOS `com.apple.quarantine` 屬性並重簽 ad-hoc 憑證，杜絕系統阻擋提示。
+4. **支援雙重環境**：同步支援獨立桌面版 IDE 與 Visual Studio Code 官方擴充套件（`google.google-antigravity`）。
+5. **常駐背景守護**：提供 macOS `launchd` 原生守護服務，版本更動時自動於背景重編注入。
+
+---
+
+## 📸 介面效果展示
+
+### 1. 歡迎頁與登入新手導引
+![歡迎頁與登入新手導引](./showimg/showlogin_tw.png)
 
 ### 2. 主編輯器介面與選單
 ![主編輯器介面與選單](./showimg/showmain_tw.png)
@@ -32,172 +55,77 @@
 
 ---
 
-## 📂 專案檔案結構
-- **`双击安装繁体中文.bat`** / **`.command`**：Windows / macOS 一鍵繁體中文化執行入口。
-- **`双击卸载还原官方英文.bat`** / **`.command`**：Windows / macOS 一鍵完美恢復原版入口。
-- **`localization_engine.js`**：核心中文化邏輯，負責 app.asar 的解包、程式碼注入、重新打包以及 macOS 下的自動深度重新簽名。
-- **`dicts_tw/`**：中文化字典資料夾，內含按模組分類 of JSON 對照翻譯字典。
+## 🚀 極速安裝指南（獨立桌面版 IDE）
 
----
+### 步驟 1：取得專案檔案（二選一）
 
-## 🚀 極速使用指南
+- **方法 A（推薦：直接下載 ZIP）**：
+  1. 點擊本頁右上角綠色按鈕 **`Code`** → 選擇 **`Download ZIP`**。
+  2. 解壓縮至電腦任意資料夾（例如「下載」資料夾）。
 
-### 1. 取得中文化包程式碼（二選一）
-
-* **方法 A：直接下載 ZIP 壓縮包（最便捷 📦）**
-  1. 點擊頁面右上角綠色的 **`Code`** 按鈕。
-  2. 在下拉選單中選擇 **`Download ZIP`** 並下載。
-  3. 將下載好的壓縮包**解壓到您電腦本機的任意目錄**（例如您的 `Downloads` 資料夾）。
-
-* **方法 B：透過 Git 命令列複製（開發者推薦 💻）**
-  如果您本機安裝了 Git，可以直接在終端機執行複製命令：
+- **方法 B（Git 複製）**：
   ```bash
-  # 如果您在國內，推薦使用下方代理加速複製地址：
-  git clone https://mirror.ghproxy.com/https://github.com/qqxpee/antigravity2-cn.git
-  
-  # 如果您配置了全域代理，可直接使用官方地址：
-  git clone https://github.com/qqxpee/antigravity2-cn.git
+  git clone https://github.com/atonnyshen/antigravity2-TW.git
+  cd antigravity2-TW
   ```
 
+### 步驟 2：執行一鍵套用
+
+1. **完全關閉** Antigravity 應用程式。
+2. 進入解壓後的資料夾：
+   - **macOS 使用者**：點兩下執行 **`點兩下安裝繁體中文.command`**。
+   - **Windows 使用者**：點兩下執行 **`點兩下安裝繁體中文.bat`**。
+3. 依提示選擇左上角品牌呈現方式（直接按 Enter 預設保留官方英文 `Antigravity`）。
+4. 重新啟動 Antigravity，即可進入全繁體中文（台灣）開發環境！
+
 ---
 
-### 2. 一鍵安裝中文化
-1. **完全退出** Antigravity 編程軟體。
-2. 進入您解壓或複製出來的 `antigravity2-cn` 資料夾：
-   - **Windows**：雙擊執行 **`双击安装繁体中文.bat`**。
-   - **macOS**：雙擊執行 **`双击安装繁体中文.command`**。
-3. 依提示選擇左上角品牌顯示方式：顯示英文 Antigravity（預設推薦）、不顯示品牌名稱、或顯示繁體中文品牌名。
-4. 執行完成後，重新啟動 Antigravity 軟体，即可暢享全繁體中文介面！
+## 💻 VS Code 官方擴充套件中文化
 
-### 品牌顯示命令列參數
+若您使用的是 Visual Studio Code 並安裝了 `Google Antigravity` 官方擴充套件：
 
-如果您透過命令列執行 `localization_engine.js`，可使用 `--brand-title` 控制左上角品牌名：
+1. 確保 Visual Studio Code 處於開啟或關閉狀態皆可。
+2. 在本專案資料夾內執行：
+   - **macOS 使用者**：點兩下執行 **`點兩下安裝VSCode擴充繁體中文.command`**。
+   - **Windows 使用者**：點兩下執行 **`點兩下安裝VSCode擴充繁體中文.bat`**。
+3. 重新啟動 VS Code，命令選擇區（Command Palette）中的 Antigravity 指令與擴充設定即刻變更為繁體中文！
+
+---
+
+## 🛡️ macOS 背景自動更新守護（有更新自動重套）
+
+Antigravity 官方在發布大版本更新後會覆蓋 `app.asar` 資源檔。在終端機貼上下方一行指令，即可註冊系統背景常駐守護；日後官方更新時，系統將在背景自動重套繁中並跳出通知：
 
 ```bash
-# 預設推薦：左上角顯示 Antigravity
-node localization_engine.js --tw --brand-title english
-
-# 隱藏左上角品牌名
-node localization_engine.js --tw --brand-title hidden
-
-# 顯示繁體中文品牌名
-node localization_engine.js --tw --brand-title translated
+# 啟用背景自動守護服務（一行指令自動下載與配置）
+curl -fsSL https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/install_macos_autowatcher.sh | bash
 ```
 
----
-
-### 3. 一鍵卸載還原
-1. **完全退出** Antigravity 編程軟體。
-2. 在當前資料夾下：
-   - **Windows**：雙擊執行 **`双击卸载还原官方英文.bat`**。
-   - **macOS**：雙擊執行 **`双击卸载还原官方英文.command`**。
-3. 執行完成後，軟體將自動清除所有中文化注入，無痕恢復至官方原版英文狀態。
+- **官方更新自動重套**：偵測到官方更新覆蓋時，背景自動重新解包、置換資源並簽署憑證。
+- **清除快取彈出通知**：自動清理 Electron 舊快取，並透過 macOS 原生通知提示使用者重啟生效。
+- **隨時同步最新詞庫**：若需同步社群最新繁中字典與程式碼，在終端機再次執行同一行指令即可自動更新。
+- **本機快速執行**：若已下載本專案，亦可直接在目錄內執行 `bash install_macos_autowatcher.sh`。
 
 ---
 
-## 🔌 可選進階功能：網路透明代理自動注入 (Windows 免 TUN 方案)
+## 🔄 一鍵還原官方英文
 
-如果您處於網路受限環境（例如連線 Google AI / Gemini API 遇到限制），且不想開啟虛擬網卡/全域 TUN 模式，本專案現已支援在安裝中文化時**自動聯動注入 Windows 免 TUN 強制代理工具**。
+若需隨時還原至官方原版英文狀態：
 
-該代理方案基於開源專案 **[yuaotian/antigravity-proxy](https://github.com/yuaotian/antigravity-proxy)**（基於 MinHook 的 DLL 劫持透明代理）。
+### 1. 桌面版 IDE 還原：
+- **macOS 使用者**：點兩下執行 **`點兩下還原官方英文.command`**。
+- **Windows 使用者**：點兩下執行 **`點兩下還原官方英文.bat`**。
 
-### 使用方法：
-1. 前往 **[yuaotian/antigravity-proxy](https://github.com/yuaotian/antigravity-proxy)** 下載編譯好的檔案：
-   - `version.dll`
-   - `dbghelp.dll`
-   - `config.json`
-2. 在當前中文化專案根目錄新增 `proxy_config` 資料夾（該目錄已設定 `.gitignore` 本機排除，絕不會被 Git 提交污染）。
-3. 將下載的 `version.dll`、`dbghelp.dll` 及依您本機代理連接埠（如 `127.0.0.1:7890` / `18080`）編輯好的 `config.json` 放入 `proxy_config/` 目錄。
-4. 正常雙擊執行 **`双击安装繁体中文.bat`**：
-   - 中文化引擎將**自動偵測** `proxy_config/` 目錄。
-   - 一步自動完成 **“介面繁體中文化 + 代理模組注入”**，無需再在軟體更新後每次手動複製 DLL 檔案！
-5. **完全可選 & 零破壞**：
-   - 如果您沒有建立 `proxy_config/` 目錄或不需要代理，安裝過程與原先 100% 一致，僅進行純淨中文化。
-   - 執行 **`双击卸载还原官方英文.bat`** 時，同樣會自動清理代理檔案，還原為官方純淨狀態。
+### 2. VS Code 擴充套件還原：
+- **macOS 使用者**：點兩下執行 **`點兩下還原VSCode擴充官方英文.command`**。
+- **Windows 使用者**：點兩下執行 **`點兩下還原VSCode擴充官方英文.bat`**。
+
+所有備份檔均完好保存，一秒即可無痕還原。
 
 ---
 
-## 🛠️ 中文化原理說明
+## 🤝 致謝與開源聲明
 
-本引擎採用 **ASAR 包注入模式**，專為 **Antigravity 2.0+** 的 Electron 架構量身定制：
-1. **自動釋放鎖**：指令碼執行前會自動偵測並安全關閉 Antigravity 執行進程，防止檔案佔用鎖定。
-2. **安全備份**：首次執行時，會在軟體目錄自動建立原始 `app.asar.bak` 檔案，確保隨時可無損還原。
-3. **精準注入**：
-   - 注入 `preload.js`：採用 WeakSet 記錄與 Shadow DOM 穿透，啟動高效的 `MutationObserver` 引擎，動態監測並將渲染層文字翻譯為繁體中文。
-   - 注入 `menu.js`：深度補丁系統級標題列選單。
-   - 注入 `tray.js`：中文化系統匣與右鍵通知狀態選單。
-   - 注入 `loadingOverlay.js`：注入極具極客風格的趣味載入語：「反重力引擎已啟動，正在努力擺脫地心引力...」。
-
----
-
-## 💡 如何透過 AI 助手自動補充或修改中文化？
-
-如果在使用過程中，您發現了漏譯的英文，或者覺得某些繁體中文翻譯不夠道地，**您可以直接在對話視窗中命令您的 AI 編程助手（即 Antigravity）來幫您更新詞庫**！無論是直接發送螢幕截圖還是描述文字，AI 都會自動幫您把對照詞條寫入詞典。
-
-> [!IMPORTANT]
-> **⚠️ AI 助手如何定位您的中文化詞庫檔案？**
-> 
-> 1. **推薦做法（最省心）**：
->    In Antigravity 軟體中，點擊 **“開啟資料夾 (Open Folder)”**，直接將本中文化包目錄（即包含當前 `README_TW.md` 的資料夾）作為**專案/工作區**開啟，然後在此工作區下與 AI 對話。此時 AI 能夠直接感知並讀寫當前專案，您不需要提供任何路徑，直接發送翻譯要求，AI 就能在背景自動幫您改好詞典！
-> 
-> 2. **免開專案做法（提示詞中需指定中文化目錄）**：
->    如果您當前正在開發別的專案，沒有把中文化目錄作為專案開啟，那麼您在對 AI 發起中文化命令時，**必須在提示詞裡明確告訴 AI 您的中文化包所在路徑**，否則 AI 無法得知要修改您電腦上的哪個資料夾。
->    * **提示詞範例**：
->      > **“我的中文化包目錄在 `C:\Users\您的電腦使用者名稱\Downloads\antigravity_chinese`（請替換為您本機的實際路徑），請幫我把下面這張截圖裡漏譯的內容補全到詞典裡。”**
-
-### 📋 常用提示詞（Prompt）模板
-
-#### 1. 方式一：直接在對話中傳送截圖（推薦 📸）
-如果您不方便打字，可以直接將未中文化乾淨的介面截圖貼上傳送給 AI，並附帶以下指令：
-> **“幫我把這張截圖裡所有未中文化的英文選項和面板內容補全到繁體中文詞典中。”**
-*(AI 會自動透過視覺識別截圖中的全部英文，並精準寫入字典。)*
-
-#### 2. 方式二：直接在對話中傳送文字描述（極速 ✍️）
-如果您只想修改或增加某一個特定詞彙，可以直接傳送文字描述給 AI：
-> **“幫我把漏譯的英文 'Allow agent to view and edit files outside of the current workspace automatically' 翻譯為 '允許代理自動檢視並編輯當前工作區之外的檔案'。”**
-*(AI 會立即找到對應的詞典並精準修改或追加該詞條。)*
-
----
-
-### 🔄 更新生效流程
-1. **命令 AI 更新**：在對話中透過截圖或文字告訴 AI 您的中文化需求，AI 會自動更新 `dicts_tw/` 下的字典檔案。
-2. **退出軟體**：**完全退出**您的 Antigravity 軟體。
-3. **重新注入**：在當前資料夾中**再次雙擊執行 `双击安装繁体中文.bat` / `.command`** 重新部署中文化。
-4. **重啟軟體**：重新開啟 Antigravity，您的改動即可完美生效！
-
----
-
-## 📝 詞典自訂指南 (供極客手動使用)
-
-如果您想手動修改翻譯，可以直接開啟 `dicts_tw/` 目錄下的 JSON 檔案：
-- **`common.json`**：公共基礎詞彙、側邊栏概覽、登入頁、常用按鈕等。
-- **`page_settings.json`**：包含極其豐富的詳細設定面板、權限二級選單對照。
-- **`menu_nav.json`**：系統及選單列翻譯。
-
-在 JSON 中新增一行，格式如下即可（注意英文逗號）：
-```json
-"Original English Text": "您的繁體中文翻譯"
-```
-儲存後，雙擊執行 **`双击安装繁体中文.bat` / `.command`** 重新部署中文化即可。
-
----
-
-## 常見問題解答 (FAQ)
-
-### 1）提示「解包失敗」或缺少 npm 環境
-* **原因**：中文化引擎依賴 Node.js 進行 ASAR 包的解析。
-* **解決**：由於 Antigravity 本身就是一個基於 Node.js/Electron 的程式，您的電腦一般都已自帶環境。如果極少數情況下報錯，只需在電腦安裝 [Node.js](https://nodejs.org/)（LTS 版本即可）並重啟指令碼。
-
-### 2）提示「權限不足」或 macOS 提示「無法開啟」
-* **解決**：
-  - **Windows**：請右鍵點擊 `双击安装繁体中文.bat`，選擇 **“以系統管理員身分執行”**。
-  - **macOS**：若雙擊執行 `.command` 提示無法開啟或沒有執行權限，可在終端機中執行 `chmod +x *.command` 來授權。如果是系統安全攔截，請在「系統設定 -> 隱私權與安全性」中點擊「仍要開啟」。本中文化包已內建自動重新簽名機制，修改後會重新進行 Ad-hoc 簽名以防止 macOS 提示應用程式損壞。
-
-### 3）軟體官方更新後，中文化失效了怎麼辦？
-* 軟體升級時，官方會覆蓋 `app.asar` 檔案。您無需擔心，直接完全退出軟體，重新雙擊執行 **`双击安装繁体中文.bat`** 重新注入一次即可完美恢復繁體中文。
-
----
-
-## 🤝 致謝
-- 感謝所有參與測試與回饋的貢獻者！
-- 特別鳴謝 **[yuaotian/antigravity-proxy](https://github.com/yuaotian/antigravity-proxy)** 提供優秀的 Windows 免 TUN 強制代理注入方案。
+- 本專案底層架構源自 [qqxpee/antigravity2-cn](https://github.com/qqxpee/antigravity2-cn)，感謝原作者初期對 ASAR 注入技術的探索。
+- 本版本由台灣開源社群獨立維護，致力於提供最精準、優雅、符合台灣開發者直覺的在地化體驗。
+- 歡迎提交 Issue 與 Pull Request 一起完善字典詞條！
