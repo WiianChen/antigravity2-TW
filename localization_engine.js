@@ -1003,12 +1003,14 @@ function install20(resourcesDir) {
         console.log(`[修改] 正在向 loadingOverlay.js 注入加载页汉化...`);
         let loadingContent = fs.readFileSync(loadingPath, 'utf-8');
         
-        const targetText = '<div class="text">Loading Antigravity</div>';
         const replacementText = USE_TW
-            ? '<div class="text">反重力引擎已啟動，正在努力擺脫地心引力...</div>'
-            : '<div class="text">反重力引擎已启动，正在努力摆脱地心引力...</div>';
+            ? '<div class="text">正在載入 Antigravity…</div>'
+            : '<div class="text">正在加载 Antigravity…</div>';
         
-        loadingContent = loadingContent.replace(targetText, replacementText);
+        loadingContent = loadingContent
+            .replace('<div class="text">Loading Antigravity</div>', replacementText)
+            .replace('<div class="text">反重力引擎已啟動，正在努力擺脫地心引力...</div>', replacementText)
+            .replace('<div class="text">反重力引擎已启动，正在努力摆脱地心引力...</div>', replacementText);
         
         fs.writeFileSync(loadingPath, loadingContent, 'utf-8');
         console.log(`[修改] 加载页汉化注入成功！`);

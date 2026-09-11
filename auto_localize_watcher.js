@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Antigravity & VS Code 擴充套件 自動版本變化監控、自癒與繁體中文化守護程式 (v2.1 跨平台版)
+ * Antigravity & VS Code 擴充套件 自動版本變化監控、自癒與繁體中文化守護程式 (v2.2 跨平台版)
  * 支援 macOS 與 Windows
  */
 
@@ -32,7 +32,6 @@ function notify(title, message) {
             const safeMsg = message.replace(/"/g, '\\"');
             execSync(`osascript -e 'display notification "${safeMsg}" with title "${safeTitle}" sound name "Glass"'`);
         } else if (IS_WIN) {
-            // Windows PowerShell 通知 (Best-effort)
             const psScript = `
 [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
 $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
@@ -45,6 +44,33 @@ $notifier.Show([Windows.UI.Notifications.ToastNotification]::new($template))
             execSync(`powershell -WindowStyle Hidden -Command "${psScript.replace(/\r?\n/g, ' ')}"`, { stdio: 'ignore' });
         }
     } catch (e) {}
+}
+
+function getCustomEnv() {
+    const nodeDir = path.dirname(process.execPath);
+    const extraPaths = IS_MAC
+        ? ['/usr/local/bin', '/opt/homebrew/bin', '/opt/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin']
+        : [];
+    const currentPaths = (process.env.PATH || '').split(path.delimiter);
+    const combined = Array.from(new Set([nodeDir, ...extraPaths, ...currentPaths])).filter(Boolean);
+    return Object.assign({}, process.env, {
+        PATH: combined.join(path.delimiter)
+    });
+}
+
+function compareVersions(a, b) {
+    const getParts = (str) => {
+        const m = str.match(/google\.google-antigravity-(\d+)\.(\d+)\.(\d+)/);
+        return m ? m.slice(1).map(Number) : [0, 0, 0];
+    };
+    const vA = getParts(a);
+    const vB = getParts(b);
+    for (let i = 0; i < 3; i++) {
+        if (vB[i] !== vA[i]) {
+            return vB[i] - vA[i];
+        }
+    }
+    return b.localeCompare(a);
 }
 
 function getAppInfo() {
@@ -73,9 +99,6 @@ function getAppInfo() {
     return { appPath: null, asarPath: null, appSupport: null };
 }
 
-/**
- * 任務 1：清理 Electron V8 Bytecode & GPU 快取
- */
 function cleanElectronCache(appSupportDir) {
     if (!appSupportDir || !fs.existsSync(appSupportDir)) return;
     const cacheDirs = ['Cache', 'Code Cache', 'GPUCache', 'DawnWebGPUCache', 'DawnGraphiteCache'];
@@ -94,32 +117,12 @@ function cleanElectronCache(appSupportDir) {
     }
 }
 
-/**
- * 任務 2：MCP 設定與技能鏈路健康檢查與自癒
- */
-function checkAndHealMcpHealth() {
-    const workspace = path.join(os.homedir(), '工作區');
-    const skillLink = path.join(workspace, '.agent', 'skills', 'open-design-bridge');
-    const skillTarget = path.join(workspace, '.claude', 'skills_cold', 'open-design-bridge');
-
-    if (!fs.existsSync(skillLink) && fs.existsSync(skillTarget)) {
-        try {
-            fs.symlinkSync(skillTarget, skillLink);
-            log('🔧 [MCP 自癒] 已自動補全遺失的 open-design-bridge 符號連結。');
-        } catch (e) {}
-    }
-}
-
-/**
- * 任務 3：桌面客戶端檢查、更新備份與注入
- */
 function checkAndLocalizeApp(appInfo) {
     const { appPath, asarPath, appSupport } = appInfo;
     if (!asarPath || !fs.existsSync(asarPath)) {
         return false;
     }
 
-    // 檢查 app.asar 是否包含繁體中文特徵詞「命令選擇區」
     const asarBuf = fs.readFileSync(asarPath);
     const needle = Buffer.from('命令選擇區', 'utf8');
     const isLocalized = asarBuf.indexOf(needle) !== -1;
@@ -135,31 +138,61 @@ function checkAndLocalizeApp(appInfo) {
             log(`⚠️ 備份 app.asar.bak 失敗: ${e.message}`);
         }
 
-        const buildDir = path.join(DIR, 'build_app');
+        const stageDir = path.join(DIR, '_staging_app');
+        if (fs.existsSync(stageDir)) {
+            fs.rmSync(stageDir, { recursive: true, force: true });
+        }
+        fs.mkdirSync(stageDir, { recursive: true });
+
+        const stageAsar = path.join(stageDir, 'app.asar');
+        fs.copyFileSync(asarPath, stageAsar);
+
+        const unpackedDir = asarPath + '.unpacked';
+        if (fs.existsSync(unpackedDir)) {
+            const stageUnpacked = stageAsar + '.unpacked';
+            try {
+                fs.cpSync(unpackedDir, stageUnpacked, { recursive: true });
+            } catch (e) {
+                log(`⚠️ 複製 app.asar.unpacked 提示: ${e.message}`);
+            }
+        }
+
         const engineScript = path.join(DIR, 'localization_engine.js');
+        const customEnv = getCustomEnv();
 
-        // 重新編譯繁中資源包，使用 process.execPath 確保在 LaunchAgent/排程環境下 100% 成功執行
-        const customEnv = Object.assign({}, process.env, {
-            PATH: `/usr/local/bin:/opt/homebrew/bin:${process.env.PATH || ''}:/usr/bin:/bin:/usr/sbin:/sbin`
-        });
-        execSync(`"${process.execPath}" "${engineScript}" --tw --brand-title english --install-dir "${buildDir}" --no-kill`, {
-            cwd: DIR,
-            stdio: 'inherit',
-            env: customEnv
-        });
+        try {
+            execSync(`"${process.execPath}" "${engineScript}" --tw --brand-title english --install-dir "${stageDir}" --no-kill`, {
+                cwd: DIR,
+                stdio: 'inherit',
+                env: customEnv
+            });
+        } catch (buildErr) {
+            log(`❌ 暫存建置失敗，取消置換以保護原始檔案完整性: ${buildErr.message}`);
+            try { fs.rmSync(stageDir, { recursive: true, force: true }); } catch (e) {}
+            return false;
+        }
 
-        const patchAsar = path.join(buildDir, 'app.asar');
+        if (!fs.existsSync(stageAsar)) {
+            log('❌ 暫存建置未產出 app.asar，取消置換。');
+            try { fs.rmSync(stageDir, { recursive: true, force: true }); } catch (e) {}
+            return false;
+        }
+
+        const stageBuf = fs.readFileSync(stageAsar);
+        if (stageBuf.indexOf(needle) === -1) {
+            log('❌ 暫存 app.asar 未包含繁中特徵詞，取消置換。');
+            try { fs.rmSync(stageDir, { recursive: true, force: true }); } catch (e) {}
+            return false;
+        }
+
         const tmpAsar = asarPath + '.tmp';
-
-        // 原子置換寫入
-        fs.copyFileSync(patchAsar, tmpAsar);
+        fs.copyFileSync(stageAsar, tmpAsar);
         fs.renameSync(tmpAsar, asarPath);
         log('✅ 繁體中文 app.asar 原子置換完成。');
 
-        // 清理快取
+        try { fs.rmSync(stageDir, { recursive: true, force: true }); } catch (e) {}
         cleanElectronCache(appSupport);
 
-        // macOS 平台重新代碼簽署
         if (IS_MAC && appPath) {
             try {
                 execSync(`xattr -d -r com.apple.quarantine "${appPath}" 2>/dev/null || true`);
@@ -177,9 +210,6 @@ function checkAndLocalizeApp(appInfo) {
     return false;
 }
 
-/**
- * 任務 4：VS Code 官方擴充套件版本巡檢與自動中文化
- */
 function checkAndLocalizeVsCodeExtension() {
     if (!fs.existsSync(EXTENSIONS_DIR)) {
         return false;
@@ -188,7 +218,7 @@ function checkAndLocalizeVsCodeExtension() {
     const entries = fs.readdirSync(EXTENSIONS_DIR);
     const matches = entries
         .filter(name => name.startsWith('google.google-antigravity-'))
-        .sort((a, b) => b.localeCompare(a));
+        .sort(compareVersions);
 
     if (matches.length === 0) {
         return false;
@@ -196,19 +226,25 @@ function checkAndLocalizeVsCodeExtension() {
 
     const latestExtDir = path.join(EXTENSIONS_DIR, matches[0]);
     const pkgPath = path.join(latestExtDir, 'package.json');
+    const extJsPath = path.join(latestExtDir, 'extension.js');
 
     if (!fs.existsSync(pkgPath)) {
         return false;
     }
 
     const pkgContent = fs.readFileSync(pkgPath, 'utf8');
-    const isLocalized = pkgContent.includes('聚焦 Antigravity 面板');
+    let isLocalized = pkgContent.includes('聚焦 Antigravity 面板');
+    if (fs.existsSync(extJsPath)) {
+        const extContent = fs.readFileSync(extJsPath, 'utf8');
+        if (!extContent.includes('重新載入視窗')) {
+            isLocalized = false;
+        }
+    }
 
     if (!isLocalized) {
-        log(`⚡ 偵測到 VS Code 擴充套件更新 (${matches[0]})，啟動自動中文化...`);
-        const customEnv = Object.assign({}, process.env, {
-            PATH: `/usr/local/bin:/opt/homebrew/bin:${process.env.PATH || ''}:/usr/bin:/bin:/usr/sbin:/sbin`
-        });
+        log(`⚡ 偵測到 VS Code 擴充套件更新或未完全中文化 (${matches[0]})，啟動自動中文化...`);
+        const localizeScript = path.join(DIR, 'localize_vscode_extension.js');
+        const customEnv = getCustomEnv();
         execSync(`"${process.execPath}" "${localizeScript}"`, { cwd: DIR, stdio: 'inherit', env: customEnv });
 
         log(`🎉 VS Code 擴充套件 (${matches[0]}) 自動繁體中文化已完成！`);
@@ -219,17 +255,21 @@ function checkAndLocalizeVsCodeExtension() {
 }
 
 function main() {
+    if (fs.existsSync(path.join(DIR, '.disable_autowatcher'))) {
+        log('ℹ️ 偵測到停用標記檔 (.disable_autowatcher)，略過本次自動檢查。');
+        return;
+    }
     try {
-        checkAndHealMcpHealth();
         const appInfo = getAppInfo();
         const appChanged = checkAndLocalizeApp(appInfo);
         const extChanged = checkAndLocalizeVsCodeExtension();
 
         if (!appChanged && !extChanged) {
-            // 静默安全日誌，不頻繁刷屏
+            // 静默安全日誌
         }
     } catch (err) {
         log(`❌ 自動中文化監控執行異常: ${err.message}`);
+        process.exitCode = 1;
     }
 }
 

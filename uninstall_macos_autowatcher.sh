@@ -2,19 +2,26 @@
 set -e
 
 PLIST_NAME="com.antigravity.autolocalize.plist"
+LABEL="com.antigravity.autolocalize"
 TARGET_PLIST="$HOME/Library/LaunchAgents/$PLIST_NAME"
 
 echo "=========================================================="
 echo "    Antigravity macOS 背景自動更新守護服務 卸載工具"
 echo "=========================================================="
 
+echo "⚡ 正在停止背景常駐守護服務..."
 if [ -f "$TARGET_PLIST" ]; then
-    echo "⚡ 正在停止背景常駐守護服務..."
-    launchctl unload "$TARGET_PLIST" 2>/dev/null || true
+    launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || launchctl unload "$TARGET_PLIST" 2>/dev/null || true
     rm -f "$TARGET_PLIST"
     echo "✅ 已成功移除 LaunchAgents 排程設定檔：$TARGET_PLIST"
 else
-    echo "ℹ️ 未在系統中偵測到已註冊的背景守護服務設定檔。"
+    launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+    echo "ℹ️ 未在檔案系統中偵測到設定檔，已嘗試卸載可能殘留之服務。"
+fi
+
+# 再次確認服務是否已退出
+if launchctl list | grep -q "$LABEL"; then
+    launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
 fi
 
 echo ""

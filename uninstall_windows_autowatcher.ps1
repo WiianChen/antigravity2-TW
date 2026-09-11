@@ -12,8 +12,15 @@ Write-Host "⚡ 正在檢查並移除 Windows 排程工作 [$taskName]..." -Fore
 
 $exists = schtasks.exe /query /tn "$taskName" 2>$null
 if ($LASTEXITCODE -eq 0) {
+    schtasks.exe /end /tn "$taskName" 2>$null
     schtasks.exe /delete /tn "$taskName" /f | Out-Null
-    Write-Host "✅ 已成功刪除排程工作 [$taskName]！" -ForegroundColor Green
+    
+    $verify = schtasks.exe /query /tn "$taskName" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "✅ 已成功停止並刪除排程工作 [$taskName]！" -ForegroundColor Green
+    } else {
+        Write-Host "⚠️ 排程可能仍被系統鎖定，請稍候重試或以管理員身分執行。" -ForegroundColor Yellow
+    }
 } else {
     Write-Host "ℹ️ 系統中未偵測到此排程工作。" -ForegroundColor Gray
 }

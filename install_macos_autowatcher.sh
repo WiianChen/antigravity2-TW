@@ -43,7 +43,7 @@ cat << PLIST_EOF > "$TARGET_PLIST"
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <string>/opt/homebrew/bin:/usr/local/bin:/opt/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
     <key>RunAtLoad</key>
     <true/>
@@ -64,6 +64,9 @@ cat << PLIST_EOF > "$TARGET_PLIST"
 </dict>
 </plist>
 PLIST_EOF
+
+# 驗證 plist 格式合法性
+plutil -lint "$TARGET_PLIST" >/dev/null
 
 launchctl unload "$TARGET_PLIST" 2>/dev/null || true
 launchctl load "$TARGET_PLIST"

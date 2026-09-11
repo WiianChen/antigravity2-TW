@@ -9,6 +9,21 @@ const os = require('os');
 
 const EXTENSIONS_DIR = path.join(os.homedir(), '.vscode', 'extensions');
 
+function compareVersions(a, b) {
+    const getParts = (str) => {
+        const m = str.match(/google\.google-antigravity-(\d+)\.(\d+)\.(\d+)/);
+        return m ? m.slice(1).map(Number) : [0, 0, 0];
+    };
+    const vA = getParts(a);
+    const vB = getParts(b);
+    for (let i = 0; i < 3; i++) {
+        if (vB[i] !== vA[i]) {
+            return vB[i] - vA[i];
+        }
+    }
+    return b.localeCompare(a);
+}
+
 function findExtensionDir() {
     if (!fs.existsSync(EXTENSIONS_DIR)) {
         throw new Error(`找不到 VS Code 擴充套件目錄：${EXTENSIONS_DIR}`);
@@ -16,7 +31,7 @@ function findExtensionDir() {
     const entries = fs.readdirSync(EXTENSIONS_DIR);
     const matches = entries
         .filter(name => name.startsWith('google.google-antigravity-'))
-        .sort((a, b) => b.localeCompare(a)); // 取最新版本
+        .sort(compareVersions); // 依語意化版本排序取最新版
 
     if (matches.length === 0) {
         throw new Error('未在 ~/.vscode/extensions/ 中找到 google.google-antigravity 擴充套件');
@@ -168,6 +183,10 @@ function localizeExtensionJs(extDir, isRestore = false) {
         `'變更 Antigravity 伺服器連接埠需要重新載入視窗方能生效。', '重新載入視窗'`
     );
     code = code.replace(
+        `if (action === 'Reload Window') {`,
+        `if (action === 'Reload Window' || action === '重新載入視窗') {`
+    );
+    code = code.replace(
         `exports.RELOAD_NEEDED = 'A reload of Visual Studio Code is needed for this setting to take effect.';`,
         `exports.RELOAD_NEEDED = '需要重新載入 Visual Studio Code 才能讓此設定生效。';`
     );
@@ -178,6 +197,10 @@ function localizeExtensionJs(extDir, isRestore = false) {
     code = code.replace(
         `message, 'Enable setting'`,
         `message, '啟用設定'`
+    );
+    code = code.replace(
+        `if (selection === 'Enable setting') {`,
+        `if (selection === 'Enable setting' || selection === '啟用設定') {`
     );
 
     fs.writeFileSync(extJsPath, code, 'utf8');
