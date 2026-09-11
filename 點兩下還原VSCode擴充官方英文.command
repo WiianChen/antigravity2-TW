@@ -1,7 +1,7 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 echo "=========================================================="
-echo "  正在還原 VS Code 官方 Antigravity 擴充套件為原版英文"
+echo "  正在還原 VS Code Antigravity 擴充套件（官方套件與儀表板）為原版英文"
 echo "=========================================================="
 node localize_vscode_extension.js --restore
 echo ""

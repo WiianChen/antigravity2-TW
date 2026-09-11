@@ -4,7 +4,7 @@ title Antigravity - VS Code 擴充套件還原官方原版英文
 
 echo.
 echo ==========================================================
-echo   正在還原 VS Code 官方 Antigravity 擴充套件為原版英文
+echo   正在還原 VS Code Antigravity 擴充套件（官方套件與儀表板）為原版英文
 echo ==========================================================
 cd /d "%~dp0"
 node localize_vscode_extension.js --restore
