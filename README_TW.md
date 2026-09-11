@@ -79,15 +79,37 @@
 
 ---
 
-## 💻 VS Code 官方擴充套件中文化
+## 📊 環境支援度對照表
 
-若您使用的是 Visual Studio Code 並安裝了 `Google Antigravity` 官方擴充套件：
+本專案支援兩種不同的開發環境，其繁體中文化涵蓋範圍如下：
 
+| 功能區塊 | 獨立桌面版（Antigravity 2.0） | VS Code 官方擴充套件（`google.google-antigravity`） |
+| :--- | :---: | :---: |
+| **主編輯視窗與新手導引** | 100% 繁體中文 | —（依賴 VS Code 本體語系） |
+| **命令選擇區（Command Palette）** | 100% 繁體中文 | 100% 繁體中文（8 組專屬指令） |
+| **擴充套件設定註釋（Settings UI）** | 100% 繁體中文 | 100% 繁體中文（各項設定參數說明） |
+| **程式碼審查建議按鈕（CodeLens）** | 100% 繁體中文 | 100% 繁體中文（「接受／拒絕」按鈕） |
+| **彈出通知與連線狀態** | 100% 繁體中文 | 100% 繁體中文（提示對話框） |
+| **macOS 系統頂部選單** | 100% 繁體中文 | —（VS Code 原生選單管理） |
+| **內嵌設定頁（`jetski.settingsEditor`）** | 100% 繁體中文 | 原廠英文（本機二進位服務動態提供） |
+| **對話面板（Chat Panel）內部** | 100% 繁體中文 | 原廠英文（本機二進位服務動態提供） |
+| **跨版本自動守護與自癒** | 支援（LaunchAgents / 排程） | 支援（更新後自動重套） |
+
+---
+
+## 💻 VS Code 官方擴充套件中文化說明
+
+若您在 Visual Studio Code 中安裝了 `Google Antigravity` 官方擴充套件：
+
+- **繁體中文涵蓋範圍**：命令選擇區的 8 組專屬指令、VS Code 設定面板中的 Antigravity 參數註釋、編輯器內建議變更的「接受／拒絕」按鈕（CodeLens），以及連線狀態對話框。
+- **架構說明**：Antigravity 在 VS Code 中的「內嵌設定面板」與「對話側邊欄」由 Google 本機執行檔（`~/.gemini/bin/agy`）透過獨立 iframe 動態渲染。受限於瀏覽器跨來源安全隔離機制（Same-Origin Policy），該內嵌網頁維持官方原版英文。若需要全介面繁體中文環境，建議使用「Antigravity 2.0 獨立桌面版」。
+
+### 操作步驟：
 1. 確保 Visual Studio Code 處於開啟或關閉狀態皆可。
 2. 在本專案資料夾內執行：
    - **macOS 使用者**：點兩下執行 **`點兩下安裝VSCode擴充繁體中文.command`**。
    - **Windows 使用者**：點兩下執行 **`點兩下安裝VSCode擴充繁體中文.bat`**。
-3. 重新啟動 VS Code，命令選擇區（Command Palette）中的 Antigravity 指令與擴充設定即刻變更為繁體中文！
+3. 重新啟動 VS Code，按 `Ctrl+P`（macOS 為 `Cmd+Shift+P`）輸入 `> Antigravity`，即可享受外殼繁中化指令環境！
 
 ---
 
