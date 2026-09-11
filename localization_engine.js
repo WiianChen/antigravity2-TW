@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
+const os = require('os');
 
 // --tw 參數：使用繁體中文字典 (dicts_tw/)，否則使用預設簡體字典 (dicts/)
 const USE_TW = process.argv.includes('--tw');
@@ -42,6 +43,10 @@ if (USE_TW) {
         "[1] 检测到 Antigravity 客户端正在运行，正在关闭以解除文件锁...": "[1] 偵測到 Antigravity 用戶端正在執行，正在關閉以解除檔案鎖...",
         "[1] 正在关闭 Antigravity 运行进程以解除文件锁...": "[1] 正在關閉 Antigravity 執行進程以解除檔案鎖...",
         "[备份] 正在创建官方原始包备份: app.asar.bak ...": "[備份] 正在建立官方原始包備份: app.asar.bak ...",
+        "[备份] 检测到全新官方英文版本，正在同步创建/更新官方备份包: ": "[備份] 偵測到全新官方英文版本，正在同步建立/更新官方備份包: ",
+        "[备份] 官方备份同步成功！": "[備份] 官方備份同步成功！",
+        "[缓存] 已自动清理 ": "[快取] 已自動清理 ",
+        " 个应用缓存目录，避免新旧版本字节码冲突。": " 個應用程式快取目錄，避免新舊版本位元組碼衝突。",
         "[备份] 备份成功！": "[備份] 備份成功！",
         "[备份] 已创建旧版 HTML 备份: ": "[備份] 已建立舊版 HTML 備份: ",
         "[解包] 正在使用 npx 提取 app.asar...": "[解包] 正在使用 npx 提取 app.asar...",
@@ -656,6 +661,35 @@ function runCommandSync(cmd) {
     }
 }
 
+function cleanElectronCache() {
+    let appSupportDir = "";
+    if (process.platform === 'darwin') {
+        appSupportDir = path.join(os.homedir(), 'Library', 'Application Support', 'Antigravity');
+    } else if (process.platform === 'win32') {
+        const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+        appSupportDir = path.join(appData, 'Antigravity');
+    } else {
+        appSupportDir = path.join(os.homedir(), '.config', 'Antigravity');
+    }
+
+    if (!fs.existsSync(appSupportDir)) return;
+
+    const cacheDirs = ['Cache', 'Code Cache', 'GPUCache', 'DawnWebGPUCache', 'DawnGraphiteCache'];
+    let cleanedCount = 0;
+    for (const c of cacheDirs) {
+        const p = path.join(appSupportDir, c);
+        if (fs.existsSync(p)) {
+            try {
+                fs.rmSync(p, { recursive: true, force: true });
+                cleanedCount++;
+            } catch (e) {}
+        }
+    }
+    if (cleanedCount > 0) {
+        console.log(`[缓存] 已自动清理 ${cleanedCount} 个应用缓存目录，避免新旧版本字节码冲突。`);
+    }
+}
+
 function resignAppOnMac(anyPath) {
     if (process.platform !== 'darwin') return;
     
@@ -672,6 +706,9 @@ function resignAppOnMac(anyPath) {
     }
     
     if (targetApp && fs.existsSync(targetApp)) {
+        try {
+            runCommandSync(`xattr -d -r com.apple.quarantine "${targetApp}"`);
+        } catch (e) {}
         console.log(`[签名] 检测到 macOS 平台，正在对应用包进行本地 ad-hoc 深度重签名: ${targetApp} ...`);
         const signRes = runCommandSync(`codesign --force --deep --sign - "${targetApp}"`);
         if (signRes.success) {
@@ -719,9 +756,15 @@ function install20(resourcesDir) {
         return false;
     }
 
-    // 1. 备份
-    if (!fs.existsSync(bakPath)) {
-        console.log(`[备份] 正在创建官方原始包备份: app.asar.bak ...`);
+    // 1. 备份与官方更新检测
+    let isAlreadyLocalized = false;
+    try {
+        const asarBuffer = fs.readFileSync(asarPath);
+        isAlreadyLocalized = asarBuffer.indexOf(Buffer.from(SIGNATURE_START, "utf8")) !== -1;
+    } catch (e) {}
+
+    if (!isAlreadyLocalized) {
+        console.log(`[备份] 检测到全新官方英文版本，正在同步创建/更新官方备份包: ${bakPath} ...`);
         try {
             fs.copyFileSync(asarPath, bakPath);
             console.log(`[备份] 备份成功！`);
@@ -732,13 +775,22 @@ function install20(resourcesDir) {
             }
             return false;
         }
-    } else {
+    } else if (fs.existsSync(bakPath)) {
         // 尝试用官方备份覆盖当前 app.asar，以确保每次汉化都基于最干净的官方英文包
         try {
             fs.copyFileSync(bakPath, asarPath);
             console.log(`[还原] 已重置当前 app.asar 为官方原始备份包，以进行全新注入...`);
         } catch (e) {
             console.log(`[提示] 当前 app.asar 被锁定（可能是客户端正在运行），将使用当前包进行增量注入。`);
+        }
+    } else {
+        console.log(`[备份] 正在创建官方原始包备份: app.asar.bak ...`);
+        try {
+            fs.copyFileSync(asarPath, bakPath);
+            console.log(`[备份] 备份成功！`);
+        } catch (e) {
+            console.error(`[错误] 创建备份失败: ${e.message}`);
+            return false;
         }
     }
 
@@ -998,6 +1050,7 @@ function install20(resourcesDir) {
         return false;
     }
 
+    cleanElectronCache();
     resignAppOnMac(resourcesDir);
     console.log(`[√] Antigravity 2.0 汉化部署完成！`);
     return true;
