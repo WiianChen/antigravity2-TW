@@ -38,7 +38,7 @@ if (Test-Path "./localization_engine.js") {
 }
 
 # 3. 執行中文化注入
-Write-Host "[1/3] 正在注入 Antigravity IDE 繁體中文語系..." -ForegroundColor Green
+Write-Host "[1/2] 正在注入繁體中文語系..." -ForegroundColor Green
 Set-Location $workDir
 node localization_engine.js --tw --brand-title english
 
@@ -47,17 +47,6 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# 4. 偵測並中文化 VS Code 擴充套件（若有安裝）
 Write-Host ""
-Write-Host "[2/3] 正在檢查 VS Code Antigravity 擴充套件..." -ForegroundColor Green
-if (Test-Path "$env:USERPROFILE\.vscode\extensions") {
-    try {
-        node localize_vscode_extension.js
-    } catch {
-        Write-Host "⚠️ VS Code 擴充套件中文化略過（可能未安裝相關外掛）。" -ForegroundColor DarkGray
-    }
-}
-
-Write-Host ""
-Write-Host "[3/3] 繁體中文套用完成！" -ForegroundColor Green
-Write-Host "🎉 Antigravity 與 VS Code 擴充套件已成功升級為繁體中文（台灣）開發環境。請開啟軟體體驗！" -ForegroundColor Cyan
+Write-Host "[2/2] 繁體中文套用完成！" -ForegroundColor Green
+Write-Host "🎉 Antigravity 已成功升級為繁體中文（台灣）開發環境。請開啟軟體體驗！" -ForegroundColor Cyan

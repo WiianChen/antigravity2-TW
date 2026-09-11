@@ -4,7 +4,7 @@ title Antigravity - VS Code 擴充套件繁體中文化
 
 echo.
 echo ==========================================================
-echo   正在為 VS Code Antigravity 擴充套件（官方套件與儀表板）安裝繁體中文
+echo   正在為 VS Code 官方 Antigravity 擴充套件安裝繁體中文
 echo ==========================================================
 cd /d "%~dp0"
 node localize_vscode_extension.js

@@ -79,18 +79,15 @@
 
 ---
 
-## 💻 VS Code 擴充套件繁中化（支援官方套件與 Cockpit 儀表板）
+## 💻 VS Code 官方擴充套件中文化
 
-若您在 Visual Studio Code 中安裝了 Antigravity 相關擴充套件，本工具會自動偵測並繁體中文化：
-1. **Google Antigravity 官方擴充套件**（`google.google-antigravity`）：指令清單、行內差異 CodeLens、設定項目與連線提示。
-2. **Antigravity Cockpit 配額儀表板擴充套件**（`jlcodes.antigravity-cockpit`）：命令選擇區中 15 個配額與帳號管理指令、側邊欄「Antigravity 儀表板」面板、帳號清單與所有繁中設定。
+若您使用的是 Visual Studio Code 並安裝了 `Google Antigravity` 官方擴充套件：
 
-### 操作步驟：
 1. 確保 Visual Studio Code 處於開啟或關閉狀態皆可。
 2. 在本專案資料夾內執行：
    - **macOS 使用者**：點兩下執行 **`點兩下安裝VSCode擴充繁體中文.command`**。
    - **Windows 使用者**：點兩下執行 **`點兩下安裝VSCode擴充繁體中文.bat`**。
-3. 重新啟動 VS Code，按 `Ctrl+P`（macOS 為 `Cmd+Shift+P`）輸入 `> Antigravity`，即可享受 100% 純淨繁體中文指令環境！
+3. 重新啟動 VS Code，命令選擇區（Command Palette）中的 Antigravity 指令與擴充設定即刻變更為繁體中文！
 
 ---
 
