@@ -1,35 +1,33 @@
 # Antigravity 台灣繁體中文在地化套件（antigravity2-TW）
 
-> 本專案底層注入架構奠基於原作者 [qqxpee/antigravity2-cn](https://github.com/qqxpee/antigravity2-cn) 的開源成果。  
-> 核心的 Electron ASAR 解包、重新打包與程式碼注入機制均由原作者研發完成。  
-> 
-> 我在日常使用時，因習慣台灣的繁體中文開發語境，便在原作者的技術架構之上，校訂了一套符合 macOS 與 VS Code 標準的繁體中文（zh-TW）詞庫，並順手補強了版本更新時的備份同步與快取清理機制，方便有相同需求的台灣開發者直接取用。
+> 本專案為 Google Antigravity 的繁體中文（台灣，zh-TW）在地化套件。  
+> 底層注入架構源自 [qqxpee/antigravity2-cn](https://github.com/qqxpee/antigravity2-cn)，本分支專注於台灣軟體體例校訂、快取清理與跨版本自動自癒守護。
 
 [![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-blue.svg)](#-極速安裝指引)
-[![Locale](https://img.shields.io/badge/Locale-繁體中文%20(台灣%20zh--TW)-brightgreen.svg)](#-術語校訂對照)
+[![Locale](https://img.shields.io/badge/Locale-繁體中文%20(台灣%20zh--TW)-brightgreen.svg)](#-術語對照標準)
 [![Upstream](https://img.shields.io/badge/Upstream-qqxpee%2Fantigravity2--cn-lightgrey.svg)](https://github.com/qqxpee/antigravity2-cn)
 
 👉 **[原版簡體中文說明 (Upstream README)](README_CN.md)**
 
 ---
 
-## 📌 術語校訂重點
+## 📌 術語對照標準
 
-原版簡中轉譯在台灣日常軟體操作中較易出戲，這裡依據 macOS 與 VS Code 繁體中文慣例進行校訂：
+詞庫依據 macOS 與 Visual Studio Code 繁體中文（台灣）介面體例校訂，主要調整對照如下：
 
-| 原版簡中轉譯 | 台灣開發者標準繁體 | 校訂說明 |
+| 原版簡中轉譯 | 台灣開發者標準繁體 | 規範說明 |
 | :--- | :--- | :--- |
-| **命令面板** | **命令選擇區** | 對齊 VS Code 繁體中文介面規範（Command Palette） |
-| **代碼倉庫 / Git 倉庫** | **儲存庫 / Git 儲存庫** | Repository 正式軟體體例 |
-| **智能體** | **代理** | AI 領域標準稱呼（Agent） |
-| **未配置計劃任務** | **未設定排程任務** | 修正排程與設定習慣用語 |
-| **終端命令** | **終端機指令** | 對齊 macOS 終端機與開發用語 |
-| **本地** | **本機** | Local 對應本機標準用語 |
-| **Token 預算超限** | **Token 預算額度已超限** | 語意完整明確 |
-| **可復用** | **可重複使用** | 還原自然中文語序 |
-| **暫無會話** | **尚無對話記錄** | 語意清晰 |
-| **確定** | **好** | 對齊 macOS 對話框標準確認按鈕 |
-| **反重力智慧引擎** | **Antigravity** | 保留官方英文品牌標記，不破壞辨識度 |
+| **命令面板** | **命令選擇區** | 對齊 VS Code 繁體中文介面標準（Command Palette） |
+| **代碼倉庫 / Git 倉庫** | **儲存庫 / Git 儲存庫** | 對齊版本控制系統標準體例（Repository） |
+| **智能體** | **代理** | AI 領域標準專用名詞（Agent） |
+| **未配置計劃任務** | **未設定排程任務** | 修正排程與設定語意搭配（Scheduled Tasks） |
+| **終端命令** | **終端機指令** | 對齊 macOS 終端機標準用法（Terminal Commands） |
+| **本地** | **本機** | Local 對應本機規範 |
+| **Token 預算超限** | **Token 預算額度已超限** | 語意精準完整 |
+| **可復用** | **可重複使用** | 自然中文語序 |
+| **暫無會話** | **尚無對話記錄** | 語意明確 |
+| **確定** | **好** | 對齊 macOS 對話框確認按鈕體例 |
+| **反重力智慧引擎** | **Antigravity** | 保留官方英文品牌標記，避免破壞辨識度 |
 
 ---
 
