@@ -40,6 +40,11 @@ cat << PLIST_EOF > "$TARGET_PLIST"
         <string>${NODE_BIN}</string>
         <string>${DIR}/auto_localize_watcher.js</string>
     </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>WatchPaths</key>

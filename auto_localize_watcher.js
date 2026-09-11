@@ -138,10 +138,14 @@ function checkAndLocalizeApp(appInfo) {
         const buildDir = path.join(DIR, 'build_app');
         const engineScript = path.join(DIR, 'localization_engine.js');
 
-        // 重新編譯繁中資源包
-        execSync(`node "${engineScript}" --tw --brand-title english --install-dir "${buildDir}" --no-kill`, {
+        // 重新編譯繁中資源包，使用 process.execPath 確保在 LaunchAgent/排程環境下 100% 成功執行
+        const customEnv = Object.assign({}, process.env, {
+            PATH: `/usr/local/bin:/opt/homebrew/bin:${process.env.PATH || ''}:/usr/bin:/bin:/usr/sbin:/sbin`
+        });
+        execSync(`"${process.execPath}" "${engineScript}" --tw --brand-title english --install-dir "${buildDir}" --no-kill`, {
             cwd: DIR,
-            stdio: 'inherit'
+            stdio: 'inherit',
+            env: customEnv
         });
 
         const patchAsar = path.join(buildDir, 'app.asar');
@@ -202,8 +206,10 @@ function checkAndLocalizeVsCodeExtension() {
 
     if (!isLocalized) {
         log(`⚡ 偵測到 VS Code 擴充套件更新 (${matches[0]})，啟動自動中文化...`);
-        const localizeScript = path.join(DIR, 'localize_vscode_extension.js');
-        execSync(`node "${localizeScript}"`, { cwd: DIR, stdio: 'inherit' });
+        const customEnv = Object.assign({}, process.env, {
+            PATH: `/usr/local/bin:/opt/homebrew/bin:${process.env.PATH || ''}:/usr/bin:/bin:/usr/sbin:/sbin`
+        });
+        execSync(`"${process.execPath}" "${localizeScript}"`, { cwd: DIR, stdio: 'inherit', env: customEnv });
 
         log(`🎉 VS Code 擴充套件 (${matches[0]}) 自動繁體中文化已完成！`);
         notify('Antigravity 自動中文化', `偵測到 VS Code 擴充套件更新 (${matches[0]})，已自動完成繁體中文化！`);
