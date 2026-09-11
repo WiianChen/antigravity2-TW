@@ -91,27 +91,40 @@
 
 ---
 
-## 🛡️ macOS 背景自動更新守護（有更新自動重套）
+## 🛡️ 背景自動更新守護（有更新自動重套，支援 macOS / Windows）
 
-Antigravity 官方在發布大版本更新後會覆蓋 `app.asar` 資源檔。在終端機貼上下方一行指令，即可註冊系統背景常駐守護；日後官方更新時，系統將在背景自動重套繁中並跳出通知：
+Antigravity 官方在發布版本更新後會覆蓋資源檔。透過背景常駐守護服務，當偵測到官方更新時，系統將自動重套繁中並跳出通知：
 
-```bash
-# 啟用背景自動守護服務（一行指令自動下載與配置）
-curl -fsSL https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/install_macos_autowatcher.sh | bash
-```
+### 🍎 macOS 使用者
 
-- **官方更新自動重套**：偵測到官方更新覆蓋時，背景自動重新解包、置換資源並簽署憑證。
-- **清除快取彈出通知**：自動清理 Electron 舊快取，並透過 macOS 原生通知提示使用者重啟生效。
-- **隨時同步最新詞庫**：若需同步社群最新繁中字典與程式碼，在終端機再次執行同一行指令即可自動更新。
-- **本機快速執行**：若已下載本專案，亦可直接在目錄內執行 `bash install_macos_autowatcher.sh`。
+- **啟用背景自動守護**（一行指令自動下載與註冊 LaunchAgents）：
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/install_macos_autowatcher.sh | bash
+  ```
+- **一鍵卸載背景守護**（停止並完全移除背景服務）：
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/uninstall_macos_autowatcher.sh | bash
+  ```
+  *(若已下載本專案，亦可直接點兩下執行 **`點兩下卸載macOS背景守護.command`**)*
 
-### 🪟 Windows 使用者一行指令安裝
+---
 
-在 Windows 系統中，開啟 PowerShell 貼上下方一行指令即可自動下載並完成套用：
+### 🪟 Windows 使用者
 
-```powershell
-irm https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/install_windows.ps1 | iex
-```
+- **一鍵安裝繁中環境**（PowerShell 一行指令）：
+  ```powershell
+  irm https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/install_windows.ps1 | iex
+  ```
+- **啟用背景自動守護**（註冊 Windows 工作排程，自動巡檢重套）：
+  ```powershell
+  irm https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/install_windows_autowatcher.ps1 | iex
+  ```
+  *(若已下載本專案，亦可點兩下執行 **`點兩下安裝Windows背景守護.bat`**)*
+- **一鍵卸載背景守護**（移除 Windows 排程工作）：
+  ```powershell
+  irm https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/uninstall_windows_autowatcher.ps1 | iex
+  ```
+  *(若已下載本專案，亦可點兩下執行 **`點兩下卸載Windows背景守護.bat`**)*
 
 ---
 
@@ -123,9 +136,13 @@ irm https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/install_wi
 - **macOS 使用者**：點兩下執行 **`點兩下還原官方英文.command`**。
 - **Windows 使用者**：點兩下執行 **`點兩下還原官方英文.bat`**。
 
-### 2. VS Code 擴充套件還原：
+### 2. VS Code 官方擴充套件還原：
 - **macOS 使用者**：點兩下執行 **`點兩下還原VSCode擴充官方英文.command`**。
 - **Windows 使用者**：點兩下執行 **`點兩下還原VSCode擴充官方英文.bat`**。
+
+### 3. 背景自動守護卸載：
+- **macOS 使用者**：點兩下執行 **`點兩下卸載macOS背景守護.command`**（或執行上方終端機卸載指令）。
+- **Windows 使用者**：點兩下執行 **`點兩下卸載Windows背景守護.bat`**（或執行上方 PowerShell 卸載指令）。
 
 所有備份檔均完好保存，一秒即可無痕還原。
 

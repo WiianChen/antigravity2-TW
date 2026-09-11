@@ -118,7 +118,7 @@ function localizeExtensionJs(extDir, isRestore = false) {
 
     let code = fs.readFileSync(extJsPath, 'utf8');
 
-    // 替換載入提示
+    // 1. 替換載入提示
     code = code.replace(
         `getLoadingContentHtml('Loading Antigravity...')`,
         `getLoadingContentHtml('載入 Antigravity 中...')`
@@ -136,8 +136,52 @@ function localizeExtensionJs(extDir, isRestore = false) {
         `>更新</button>`
     );
 
+    // 2. 替換 CodeLens 建議區塊按鈕 (Accept / Reject)
+    code = code.replace(
+        `title: '$(check) Accept',`,
+        `title: '$(check) 接受',`
+    );
+    code = code.replace(
+        `tooltip: 'Accept this suggestion block',`,
+        `tooltip: '接受此處建議變更',`
+    );
+    code = code.replace(
+        `title: '$(chrome-close) Reject',`,
+        `title: '$(chrome-close) 拒絕',`
+    );
+    code = code.replace(
+        `tooltip: 'Reject this suggestion block',`,
+        `tooltip: '拒絕此處建議變更',`
+    );
+
+    // 3. 替換彈出通知與對話框 (Notification & Messages)
+    code = code.replace(
+        `'Antigravity conversation state reset.'`,
+        `'Antigravity 對話狀態已重設。'`
+    );
+    code = code.replace(
+        "`Antigravity Inline Diff ${!current ? 'enabled' : 'disabled'}.`",
+        "`Antigravity 行內差異比對已${!current ? '啟用' : '停用'}。`"
+    );
+    code = code.replace(
+        `'Changing the Antigravity server port requires reloading the window to take effect.', 'Reload Window'`,
+        `'變更 Antigravity 伺服器連接埠需要重新載入視窗方能生效。', '重新載入視窗'`
+    );
+    code = code.replace(
+        `exports.RELOAD_NEEDED = 'A reload of Visual Studio Code is needed for this setting to take effect.';`,
+        `exports.RELOAD_NEEDED = '需要重新載入 Visual Studio Code 才能讓此設定生效。';`
+    );
+    code = code.replace(
+        `exports.RELOAD = 'Reload';`,
+        `exports.RELOAD = '重新載入';`
+    );
+    code = code.replace(
+        `message, 'Enable setting'`,
+        `message, '啟用設定'`
+    );
+
     fs.writeFileSync(extJsPath, code, 'utf8');
-    console.log('✅ extension.js 介面與載入流程繁體中文化完成！');
+    console.log('✅ extension.js 介面、通知對話框與 CodeLens 繁體中文化完成！');
 }
 
 function main() {

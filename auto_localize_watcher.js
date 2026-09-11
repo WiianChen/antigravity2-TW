@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Antigravity & VS Code 擴充套件 自動版本變化監控、自癒與繁體中文化守護程式 (v2.0)
+ * Antigravity & VS Code 擴充套件 自動版本變化監控、自癒與繁體中文化守護程式 (v2.1 跨平台版)
+ * 支援 macOS 與 Windows
  */
 
 const fs = require('fs');
@@ -9,12 +10,11 @@ const { execSync } = require('child_process');
 const os = require('os');
 
 const DIR = __dirname;
-const APP_PATH = '/Applications/Antigravity.app';
-const RESOURCES_PATH = path.join(APP_PATH, 'Contents', 'Resources');
-const ASAR_PATH = path.join(RESOURCES_PATH, 'app.asar');
-const EXTENSIONS_DIR = path.join(os.homedir(), '.vscode', 'extensions');
-const APP_SUPPORT_DIR = path.join(os.homedir(), 'Library', 'Application Support', 'Antigravity');
+const IS_MAC = process.platform === 'darwin';
+const IS_WIN = process.platform === 'win32';
+
 const LOG_FILE = path.join(DIR, 'autolocalize.log');
+const EXTENSIONS_DIR = path.join(os.homedir(), '.vscode', 'extensions');
 
 function log(msg) {
     const time = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
@@ -27,22 +27,61 @@ function log(msg) {
 
 function notify(title, message) {
     try {
-        const safeTitle = title.replace(/"/g, '\\"');
-        const safeMsg = message.replace(/"/g, '\\"');
-        execSync(`osascript -e 'display notification "${safeMsg}" with title "${safeTitle}" sound name "Glass"'`);
+        if (IS_MAC) {
+            const safeTitle = title.replace(/"/g, '\\"');
+            const safeMsg = message.replace(/"/g, '\\"');
+            execSync(`osascript -e 'display notification "${safeMsg}" with title "${safeTitle}" sound name "Glass"'`);
+        } else if (IS_WIN) {
+            // Windows PowerShell 通知 (Best-effort)
+            const psScript = `
+[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
+$textNodes = $template.GetElementsByTagName("text")
+$textNodes.Item(0).AppendChild($template.CreateTextNode("${title}")) | Out-Null
+$textNodes.Item(1).AppendChild($template.CreateTextNode("${message}")) | Out-Null
+$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("Antigravity")
+$notifier.Show([Windows.UI.Notifications.ToastNotification]::new($template))
+`;
+            execSync(`powershell -WindowStyle Hidden -Command "${psScript.replace(/\r?\n/g, ' ')}"`, { stdio: 'ignore' });
+        }
     } catch (e) {}
+}
+
+function getAppInfo() {
+    if (IS_MAC) {
+        const appPath = '/Applications/Antigravity.app';
+        const asarPath = path.join(appPath, 'Contents', 'Resources', 'app.asar');
+        const appSupport = path.join(os.homedir(), 'Library', 'Application Support', 'Antigravity');
+        return { appPath, asarPath, appSupport };
+    } else if (IS_WIN) {
+        const candidates = [
+            process.env.ANTIGRAVITY_INSTALL_DIR,
+            process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs', 'antigravity') : null,
+            'C:\\Program Files\\Antigravity',
+            'C:\\Programs\\Antigravity'
+        ].filter(Boolean);
+
+        for (const c of candidates) {
+            const asar = path.join(c, 'resources', 'app.asar');
+            if (fs.existsSync(asar)) {
+                const appSupport = process.env.APPDATA ? path.join(process.env.APPDATA, 'Antigravity') : null;
+                return { appPath: c, asarPath: asar, appSupport };
+            }
+        }
+        return { appPath: null, asarPath: null, appSupport: null };
+    }
+    return { appPath: null, asarPath: null, appSupport: null };
 }
 
 /**
  * 任務 1：清理 Electron V8 Bytecode & GPU 快取
- * 避免官方更新覆蓋 app.asar 後，應用程式繼續讀取舊版本的快取資料
  */
-function cleanElectronCache() {
-    if (!fs.existsSync(APP_SUPPORT_DIR)) return;
+function cleanElectronCache(appSupportDir) {
+    if (!appSupportDir || !fs.existsSync(appSupportDir)) return;
     const cacheDirs = ['Cache', 'Code Cache', 'GPUCache', 'DawnWebGPUCache', 'DawnGraphiteCache'];
     let cleaned = 0;
     for (const cName of cacheDirs) {
-        const target = path.join(APP_SUPPORT_DIR, cName);
+        const target = path.join(appSupportDir, cName);
         if (fs.existsSync(target)) {
             try {
                 fs.rmSync(target, { recursive: true, force: true });
@@ -57,7 +96,6 @@ function cleanElectronCache() {
 
 /**
  * 任務 2：MCP 設定與技能鏈路健康檢查與自癒
- * 防止更新後 MCP 發生 Error 或丟失符號連結
  */
 function checkAndHealMcpHealth() {
     const workspace = path.join(os.homedir(), '工作區');
@@ -75,23 +113,23 @@ function checkAndHealMcpHealth() {
 /**
  * 任務 3：桌面客戶端檢查、更新備份與注入
  */
-function checkAndLocalizeApp() {
-    if (!fs.existsSync(ASAR_PATH)) {
+function checkAndLocalizeApp(appInfo) {
+    const { appPath, asarPath, appSupport } = appInfo;
+    if (!asarPath || !fs.existsSync(asarPath)) {
         return false;
     }
 
     // 檢查 app.asar 是否包含繁體中文特徵詞「命令選擇區」
-    const asarBuf = fs.readFileSync(ASAR_PATH);
+    const asarBuf = fs.readFileSync(asarPath);
     const needle = Buffer.from('命令選擇區', 'utf8');
     const isLocalized = asarBuf.indexOf(needle) !== -1;
 
     if (!isLocalized) {
-        log('⚡ 偵測到 Antigravity.app 官方更新（新版英文官方包），啟動自動中文化流程...');
+        log('⚡ 偵測到 Antigravity 官方更新（新版英文官方包），啟動自動中文化流程...');
 
-        const bakAsar = ASAR_PATH + '.bak';
-        // 關鍵：將「當前新版官方英文包」及時備份，確保還原時為最新官方版本而非舊版本
+        const bakAsar = asarPath + '.bak';
         try {
-            fs.copyFileSync(ASAR_PATH, bakAsar);
+            fs.copyFileSync(asarPath, bakAsar);
             log('📦 已將最新官方英文版原檔備份至 app.asar.bak');
         } catch (e) {
             log(`⚠️ 備份 app.asar.bak 失敗: ${e.message}`);
@@ -107,26 +145,28 @@ function checkAndLocalizeApp() {
         });
 
         const patchAsar = path.join(buildDir, 'app.asar');
-        const tmpAsar = ASAR_PATH + '.tmp';
+        const tmpAsar = asarPath + '.tmp';
 
         // 原子置換寫入
         fs.copyFileSync(patchAsar, tmpAsar);
-        fs.renameSync(tmpAsar, ASAR_PATH);
+        fs.renameSync(tmpAsar, asarPath);
         log('✅ 繁體中文 app.asar 原子置換完成。');
 
         // 清理快取
-        cleanElectronCache();
+        cleanElectronCache(appSupport);
 
-        // 移除 Gatekeeper 隔離屬性並執行程式碼簽署
-        try {
-            execSync(`xattr -d -r com.apple.quarantine "${APP_PATH}" 2>/dev/null || true`);
-            execSync(`codesign --force --deep --sign - "${APP_PATH}"`, { stdio: 'ignore' });
-            log('✅ 已完成 macOS ad-hoc 程式碼簽署並移除隔離屬性。');
-        } catch (e) {
-            log(`⚠️ 程式碼簽署提示: ${e.message}`);
+        // macOS 平台重新代碼簽署
+        if (IS_MAC && appPath) {
+            try {
+                execSync(`xattr -d -r com.apple.quarantine "${appPath}" 2>/dev/null || true`);
+                execSync(`codesign --force --deep --sign - "${appPath}"`, { stdio: 'ignore' });
+                log('✅ 已完成 macOS ad-hoc 程式碼簽署並移除隔離屬性。');
+            } catch (e) {
+                log(`⚠️ 程式碼簽署提示: ${e.message}`);
+            }
         }
 
-        log('🎉 Antigravity.app 自動繁體中文化全流程處理完畢！');
+        log('🎉 Antigravity 自動繁體中文化全流程處理完畢！');
         notify('Antigravity 自動中文化', '偵測到 Antigravity IDE 官方更新，已自動為新版本完成繁中化！請重啟應用程式生效。');
         return true;
     }
@@ -134,7 +174,7 @@ function checkAndLocalizeApp() {
 }
 
 /**
- * 任務 4：VS Code 擴充套件版本巡檢與自動中文化
+ * 任務 4：VS Code 官方擴充套件版本巡檢與自動中文化
  */
 function checkAndLocalizeVsCodeExtension() {
     if (!fs.existsSync(EXTENSIONS_DIR)) {
@@ -144,7 +184,7 @@ function checkAndLocalizeVsCodeExtension() {
     const entries = fs.readdirSync(EXTENSIONS_DIR);
     const matches = entries
         .filter(name => name.startsWith('google.google-antigravity-'))
-        .sort((a, b) => b.localeCompare(a)); // 排序取最高/最新版本
+        .sort((a, b) => b.localeCompare(a));
 
     if (matches.length === 0) {
         return false;
@@ -175,7 +215,8 @@ function checkAndLocalizeVsCodeExtension() {
 function main() {
     try {
         checkAndHealMcpHealth();
-        const appChanged = checkAndLocalizeApp();
+        const appInfo = getAppInfo();
+        const appChanged = checkAndLocalizeApp(appInfo);
         const extChanged = checkAndLocalizeVsCodeExtension();
 
         if (!appChanged && !extChanged) {
