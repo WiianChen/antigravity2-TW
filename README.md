@@ -1,33 +1,34 @@
 # Antigravity 台灣繁體中文在地化套件（antigravity2-TW）
 
-> 專為台灣開發者校訂的 Google Antigravity 繁體中文（zh-TW）環境套件。  
-> 修正簡中轉譯錯誤，對齊 macOS 與 VS Code 繁體中文介面規範，支援版本更新自癒守護。
+> 本專案底層注入架構奠基於原作者 [qqxpee/antigravity2-cn](https://github.com/qqxpee/antigravity2-cn) 的開源成果。  
+> 核心的 Electron ASAR 解包、重新打包與程式碼注入機制均由原作者研發完成。  
+> 
+> 我在日常使用時，因習慣台灣的繁體中文開發語境，便在原作者的技術架構之上，校訂了一套符合 macOS 與 VS Code 標準的繁體中文（zh-TW）詞庫，並順手補強了版本更新時的備份同步與快取清理機制，方便有相同需求的台灣開發者直接取用。
 
 [![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-blue.svg)](#-極速安裝指引)
 [![Locale](https://img.shields.io/badge/Locale-繁體中文%20(台灣%20zh--TW)-brightgreen.svg)](#-術語校訂對照)
-[![Antigravity](https://img.shields.io/badge/Antigravity-v2.12.2%2B%20Compatible-orange.svg)](#)
-[![VS Code Extension](https://img.shields.io/badge/VS%20Code-Extension%20Supported-purple.svg)](#-vs-code-官方擴充套件繁中化)
+[![Upstream](https://img.shields.io/badge/Upstream-qqxpee%2Fantigravity2--cn-lightgrey.svg)](https://github.com/qqxpee/antigravity2-cn)
 
-👉 **[簡體中文版說明 (Simplified Chinese README)](README_CN.md)**
+👉 **[原版簡體中文說明 (Upstream README)](README_CN.md)**
 
 ---
 
-## 📌 術語校訂對照
+## 📌 術語校訂重點
 
-本套件針對現有社群漢化包進行全量字典校訂，排除機器硬翻與非台灣標準軟體詞彙：
+原版簡中轉譯在台灣日常軟體操作中較易出戲，這裡依據 macOS 與 VS Code 繁體中文慣例進行校訂：
 
 | 原版簡中轉譯 | 台灣開發者標準繁體 | 校訂說明 |
 | :--- | :--- | :--- |
-| **中古文件資源** | **Firestore 資料庫中儲存的文件** | 修正將 Firestore documents 誤譯為歷史古物 |
 | **命令面板** | **命令選擇區** | 對齊 VS Code 繁體中文介面規範（Command Palette） |
-| **終端命令** | **終端機指令** | 對齊 macOS 終端機與台灣程式用語 |
-| **未配置計劃任務** | **未設定排程任務** | 修正排程與設定動賓搭配 |
+| **代碼倉庫 / Git 倉庫** | **儲存庫 / Git 儲存庫** | Repository 正式軟體體例 |
 | **智能體** | **代理** | AI 領域標準稱呼（Agent） |
+| **未配置計劃任務** | **未設定排程任務** | 修正排程與設定習慣用語 |
+| **終端命令** | **終端機指令** | 對齊 macOS 終端機與開發用語 |
 | **本地** | **本機** | Local 對應本機標準用語 |
-| **Git 倉庫** | **Git 儲存庫** | Repository 正式繁體譯名 |
+| **Token 預算超限** | **Token 預算額度已超限** | 語意完整明確 |
 | **可復用** | **可重複使用** | 還原自然中文語序 |
-| **暫無會話** | **尚無對話記錄** | 語意明確清晰 |
-| **確定** | **好** | 對齊 macOS 對話框標準按鈕名稱 |
+| **暫無會話** | **尚無對話記錄** | 語意清晰 |
+| **確定** | **好** | 對齊 macOS 對話框標準確認按鈕 |
 | **反重力智慧引擎** | **Antigravity** | 保留官方英文品牌標記，不破壞辨識度 |
 
 ---
@@ -126,6 +127,6 @@ curl -fsSL https://raw.githubusercontent.com/atonnyshen/antigravity2-TW/main/ins
 
 ## 🤝 致謝與開源聲明
 
-- 本專案底層架構源自 [qqxpee/antigravity2-cn](https://github.com/qqxpee/antigravity2-cn)，感謝原作者初期對 ASAR 注入技術的探索。
-- 本版本由台灣開源社群獨立維護，致力於提供最精準、優雅、符合台灣開發者直覺的在地化體驗。
-- 歡迎提交 Issue 與 Pull Request 一起完善字典詞條！
+- 特別感謝 [qqxpee/antigravity2-cn](https://github.com/qqxpee/antigravity2-cn) 原作者的開源貢獻與 ASAR 注入架構設計。
+- 本儲存庫為個人使用與分享版本，主要維護繁體中文語境字典與自動更新腳本。
+- 若使用時發現漏譯或語意不順的詞條，歡迎隨時提交 Issue 或 PR 共同補充！
