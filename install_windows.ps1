@@ -1,4 +1,4 @@
-# Antigravity 2.0 繁體中文（台灣）Windows 一鍵安裝與自動設定腳本
+﻿# Antigravity 2.0 繁體中文（台灣）Windows 一鍵安裝與自動設定腳本
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 

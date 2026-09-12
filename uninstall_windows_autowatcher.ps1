@@ -1,4 +1,4 @@
-# Antigravity Windows 背景自動更新守護排程 卸載腳本
+﻿# Antigravity Windows 背景自動更新守護排程 卸載腳本
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 

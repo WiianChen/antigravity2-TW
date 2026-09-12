@@ -1,4 +1,4 @@
-# Antigravity Windows 背景自動更新守護排程 安裝腳本
+﻿# Antigravity Windows 背景自動更新守護排程 安裝腳本
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
@@ -44,7 +44,7 @@ $taskName = "AntigravityAutoLocalize"
 # 3. 建立 Windows 工作排程（每 30 分鐘執行一次，並在登入時啟動）
 Write-Host "⚡ 正在註冊 Windows 排程工作 [$taskName]..." -ForegroundColor Yellow
 
-$actionCmd = "`"$nodePath`" `"$watcherScript`""
+$actionCmd = '\"' + $nodePath + '\" \"' + $watcherScript + '\"'
 schtasks.exe /create /tn "$taskName" /tr "$actionCmd" /sc minute /mo 30 /f | Out-Null
 
 if ($LASTEXITCODE -eq 0) {
