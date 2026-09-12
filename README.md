@@ -86,8 +86,10 @@ Google Antigravity 發展歷程中包含不同產品形態，本專案的支援�
 | 版本／形態 | 架構類型 | 應用程式路徑／識別名稱 | 繁體中文支援狀態 | 說明與建議 |
 | :--- | :--- | :--- | :---: | :--- |
 | **Antigravity 2.0 桌面端** | 獨立 Electron 客戶端（官方主流） | `/Applications/Antigravity.app`<br>`Programs\Antigravity` | **完整支援（100%）** | 主編輯介面、新手導引、偏好設定面板、MCP 知識庫與選單全介面繁體中文化；支援背景自動守護自癒。 |
-| **Antigravity 1.0 桌面端** | 舊版 VS Code Fork 客製 IDE | `/Applications/Antigravity IDE.app`<br>`Programs\Antigravity` | **基礎相容（建議升級）** | 早期 HTML 腳本注入架構。本專案保留相容偵測邏輯，但因 Google 官方已停止維護 1.0 且全線轉移至 2.0，強烈建議使用者升級至 2.0 取得完整繁中體驗。 |
+| **Antigravity 1.0 桌面端** | 舊版 VS Code Fork 客製 IDE | `/Applications/Antigravity IDE.app`<br>`Programs\Antigravity IDE` | **基礎相容（建議升級）** | 早期 HTML 腳本注入架構。本專案保留相容偵測邏輯，但因 Google 官方已停止維護 1.0 且全線轉移至 2.0，強烈建議使用者升級至 2.0 取得完整繁中體驗。 |
 | **VS Code 官方外掛** | VS Code 擴充套件（`google.google-antigravity`） | `~/.vscode/extensions/google.google-antigravity-*` | **已停止支援** | 核心設定與對話側邊欄由本地閉源二進位檔（`agy`）動態透過 iframe 輸出，無法全介面繁中化，且背景連線易受干擾。專案已全面終止支援。 |
+
+Windows 若同時安裝 `Antigravity.exe` 與 `Antigravity IDE.exe`，一鍵安裝、還原及背景守護會自動偵測並逐套處理；使用 `--install-dir` 時則只處理明確指定的目錄，多次指定可處理多套安裝。
 
 ---
 

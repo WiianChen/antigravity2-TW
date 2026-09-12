@@ -1,7 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
+const crypto = require('crypto');
 const os = require('os');
+const {
+    discoverInstallations,
+    getDefaultWindowsCandidates,
+} = require('./windows_installations');
 
 // --tw 參數：使用繁體中文字典 (dicts_tw/)，否則使用預設簡體字典 (dicts/)
 const USE_TW = process.argv.includes('--tw');
@@ -535,13 +540,16 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-let wasAppRunning = false;
-
-function checkIfAppIsRunning() {
+function checkIfAppIsRunning(executableName) {
     try {
         if (process.platform === 'win32') {
-            const stdout = child_process.execSync('tasklist /fi "imagename eq Antigravity.exe" /nh', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-            return stdout.toLowerCase().includes('antigravity.exe');
+            if (!executableName) return false;
+            const stdout = child_process.execFileSync(
+                'tasklist',
+                ['/fi', `imagename eq ${executableName}`, '/nh'],
+                { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+            );
+            return stdout.toLowerCase().includes(executableName.toLowerCase());
         } else if (process.platform === 'darwin') {
             const stdout = child_process.execSync('pgrep -f Antigravity', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
             return stdout.trim().length > 0;
@@ -552,11 +560,15 @@ function checkIfAppIsRunning() {
     return false;
 }
 
-function closeAntigravityProcesses() {
-    console.log("[1] 检测到 Antigravity 客户端正在运行，正在关闭以解除文件锁...");
+function closeAntigravityProcesses(executableName) {
+    console.log(`[1] 检测到 ${executableName || 'Antigravity'} 正在运行，正在关闭以解除文件锁...`);
     try {
         if (process.platform === 'win32') {
-            child_process.execSync('taskkill /f /im Antigravity.exe /t >nul 2>nul');
+            child_process.execFileSync(
+                'taskkill',
+                ['/f', '/im', executableName, '/t'],
+                { stdio: 'ignore' },
+            );
         } else {
             child_process.execSync('pkill -f Antigravity >/dev/null 2>&1');
         }
@@ -567,43 +579,19 @@ function closeAntigravityProcesses() {
     while (Date.now() - start < 1500) {}
 }
 
-function detectInstallationDir(manualDir) {
-    if (manualDir) {
-        if (fs.existsSync(manualDir)) {
-            let resolved = path.resolve(manualDir);
-            if (fs.statSync(resolved).isFile() && resolved.endsWith('app.asar')) {
-                resolved = path.dirname(resolved);
-            }
-            return resolved;
-        } else {
-            console.error(`[错误] 手动指定的路径不存在: ${manualDir}`);
-            process.exit(1);
+function detectInstallationDirs(manualDirs) {
+    if (manualDirs.length > 0) {
+        const installations = discoverInstallations(manualDirs);
+        if (installations.length !== manualDirs.length) {
+            const detected = new Set(installations.map(item => item.installDir.toLowerCase()));
+            const invalid = manualDirs.filter(dir => !detected.has(path.resolve(dir).toLowerCase()));
+            throw new Error(`手动指定的路径不存在或不是有效安装目录: ${invalid.join(', ')}`);
         }
+        return installations;
     }
 
-    const candidates = [];
-    const seenCandidates = new Set();
-    const addCandidate = (candidate) => {
-        if (!candidate) return;
-        const normalized = path.resolve(candidate);
-        const key = normalized.toLowerCase();
-        if (!seenCandidates.has(key)) {
-            candidates.push(normalized);
-            seenCandidates.add(key);
-        }
-    };
-    const hasAntigravityResources = (candidate) => {
-        return fs.existsSync(path.join(candidate, "resources", "app.asar")) ||
-            fs.existsSync(path.join(candidate, "app.asar")) ||
-            fs.existsSync(path.join(candidate, "Contents", "Resources", "app.asar")) ||
-            fs.existsSync(path.join(candidate, "resources", "app", "product.json")) ||
-            fs.existsSync(path.join(candidate, "Contents", "Resources", "app", "product.json"));
-    };
-
     if (process.platform === 'win32') {
-        addCandidate(process.env.ANTIGRAVITY_INSTALL_DIR);
-        addCandidate(process.env.ANTIGRAVITY_HOME);
-
+        const registryCandidates = [];
         const registryRoots = [
             'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall',
             'HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall',
@@ -616,43 +604,31 @@ function detectInstallationDir(manualDir) {
                     const match = line.match(/^\s*(InstallLocation|DisplayIcon)\s+REG_\w+\s+(.+)$/i);
                     if (!match) continue;
                     let value = match[2].trim().replace(/^"|"$/g, '');
-                    if (/Antigravity\.exe/i.test(value)) {
+                    if (/Antigravity(?: IDE)?\.exe/i.test(value)) {
                         value = path.dirname(value);
                     }
-                    addCandidate(value);
+                    registryCandidates.push(value);
                 }
             } catch (e) {
                 // Registry probing is best-effort; fall back to common locations below.
             }
         }
-
-        const driveLetters = ['C', 'D', 'E', 'F'];
-        for (const drive of driveLetters) {
-            addCandidate(`${drive}:\\Programs\\Antigravity`);
-            addCandidate(`${drive}:\\Antigravity`);
-        }
-        addCandidate("C:\\Program Files\\Antigravity");
-
-        const localAppdata = process.env.LOCALAPPDATA;
-        if (localAppdata) {
-            addCandidate(path.join(localAppdata, 'Programs', 'antigravity'));
-        }
+        const installations = discoverInstallations(
+            getDefaultWindowsCandidates(process.env, { registryCandidates }),
+        );
+        if (installations.length > 0) return installations;
     } else if (process.platform === 'darwin') {
-        addCandidate("/Applications/Antigravity.app");
-        addCandidate("/Applications/Antigravity IDE.app");
-        addCandidate(path.join(process.env.HOME || '', 'Applications', 'Antigravity.app'));
-        addCandidate(path.join(process.env.HOME || '', 'Applications', 'Antigravity IDE.app'));
+        const installations = discoverInstallations([
+            '/Applications/Antigravity.app',
+            '/Applications/Antigravity IDE.app',
+            path.join(process.env.HOME || '', 'Applications', 'Antigravity.app'),
+            path.join(process.env.HOME || '', 'Applications', 'Antigravity IDE.app'),
+        ]);
+        // Windows 支援同時處理多套安裝；macOS 維持既有的單一目標行為。
+        if (installations.length > 0) return [installations[0]];
     }
 
-    for (const p of candidates) {
-        if (fs.existsSync(p) && hasAntigravityResources(p)) {
-            console.log(`[探测] 成功自动识别到 Antigravity 安装目录: ${p}`);
-            return path.resolve(p);
-        }
-    }
-
-    console.error("[错误] 未找到默认安装目录，请使用 --install-dir 手动指定您的安装路径！");
-    process.exit(1);
+    throw new Error('未找到默认安装目录，请使用 --install-dir 手动指定您的安装路径！');
 }
 
 function runCommandSync(cmd) {
@@ -1286,40 +1262,19 @@ function restoreProxyIfNeeded(installDir) {
     }
 }
 
-// ==========================================
-// 入口
-// ==========================================
-function main() {
-    let huifu = false;
-    let manualDir = "";
-    let noKill = false;
+function processInstallation(installation, huifu, noKill) {
+    const { installDir, executableName } = installation;
+    console.log(`\n[目标] ${executableName || path.basename(installDir)}: ${installDir}`);
 
-    const args = process.argv.slice(2);
-    for (let i = 0; i < args.length; i++) {
-        if (args[i] === '--huifu') {
-            huifu = true;
-        } else if (args[i] === '--install-dir') {
-            manualDir = args[i + 1] || "";
-            i++;
-        } else if (args[i] === '--no-kill') {
-            noKill = true;
-        } else if (args[i] === '--brand-title') {
-            i++;
-        }
-    }
-
-    // 1. 探测路径
-    const installDir = detectInstallationDir(manualDir);
-    
-    // 2. 检测客户端是否正在运行，并根据参数决定是否关闭以解除文件锁定
-    wasAppRunning = checkIfAppIsRunning();
+    // 1. 检测对应客户端是否正在运行，并根据参数决定是否关闭以解除文件锁定
+    const wasAppRunning = checkIfAppIsRunning(executableName);
     if (noKill) {
         console.log("[跳过] 检测到 --no-kill 参数，跳过关闭 Antigravity 运行进程。");
-    } else {
-        closeAntigravityProcesses();
+    } else if (wasAppRunning) {
+        closeAntigravityProcesses(executableName);
     }
 
-    // 3. 找到 resources 资源目录
+    // 2. 找到 resources 资源目录
     let resourcesDir = "";
     if (fs.existsSync(path.join(installDir, "resources"))) {
         resourcesDir = path.join(installDir, "resources");
@@ -1336,13 +1291,12 @@ function main() {
     }
 
     if (!fs.existsSync(resourcesDir)) {
-        console.error(`[错误] 无法定位有效的资源(resources)目录: ${resourcesDir}`);
-        process.exit(1);
+        throw new Error(`无法定位有效的资源(resources)目录: ${resourcesDir}`);
     }
 
     ensureWritePermission(resourcesDir);
 
-    // 4. 根据架构执行
+    // 3. 根据架构执行
     const asarPath = path.join(resourcesDir, "app.asar");
     const isV2 = fs.existsSync(asarPath);
     let success = false;
@@ -1369,13 +1323,13 @@ function main() {
         }
     }
 
-    // 5. 校验通过且原来客户端在运行，则自动重新启动客户端
+    // 4. 校验通过且原来客户端在运行，则自动重新启动对应客户端
     if (success && wasAppRunning) {
         console.log("\n[启动] 检测到安装前反重力客户端处于开启状态，正在重新启动客户端...");
         try {
             if (process.platform === 'win32') {
-                const exePath = path.join(installDir, 'Antigravity.exe');
-                if (fs.existsSync(exePath)) {
+                const exePath = executableName ? path.join(installDir, executableName) : null;
+                if (exePath && fs.existsSync(exePath)) {
                     const child = child_process.spawn(exePath, [], {
                         detached: true,
                         stdio: 'ignore'
@@ -1394,9 +1348,55 @@ function main() {
         }
     }
 
-    if (!success) {
-        process.exit(1);
+    return success;
+}
+
+// ==========================================
+// 入口
+// ==========================================
+function main() {
+    let huifu = false;
+    const manualDirs = [];
+    let noKill = false;
+
+    const args = process.argv.slice(2);
+    for (let i = 0; i < args.length; i++) {
+        if (args[i] === '--huifu') {
+            huifu = true;
+        } else if (args[i] === '--install-dir') {
+            const manualDir = args[i + 1] || "";
+            if (manualDir) manualDirs.push(manualDir);
+            i++;
+        } else if (args[i] === '--no-kill') {
+            noKill = true;
+        } else if (args[i] === '--brand-title') {
+            i++;
+        }
     }
+
+    let installations;
+    try {
+        installations = detectInstallationDirs(manualDirs);
+    } catch (error) {
+        console.error(`[错误] ${error.message}`);
+        process.exitCode = 1;
+        return;
+    }
+
+    console.log(`[探测] 共识别到 ${installations.length} 套 Antigravity 安装。`);
+    let allSuccessful = true;
+    for (const installation of installations) {
+        try {
+            if (!processInstallation(installation, huifu, noKill)) {
+                allSuccessful = false;
+            }
+        } catch (error) {
+            allSuccessful = false;
+            console.error(`[错误] ${installation.installDir}: ${error.message}`);
+        }
+    }
+
+    if (!allSuccessful) process.exitCode = 1;
 }
 
 main();

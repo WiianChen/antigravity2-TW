@@ -6,8 +6,14 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execFileSync, execSync } = require('child_process');
 const os = require('os');
+const {
+    buildWindowsWatcherTargets,
+    discoverInstallations,
+    getDefaultWindowsCandidates,
+    isWatcherTargetLocalized,
+} = require('./windows_installations');
 
 const DIR = __dirname;
 const IS_MAC = process.platform === 'darwin';
@@ -57,7 +63,7 @@ function getCustomEnv() {
     });
 }
 
-function getAppInfo() {
+function getAppInfos() {
     if (IS_MAC) {
         const macCandidates = [
             '/Applications/Antigravity.app',
@@ -65,36 +71,26 @@ function getAppInfo() {
             path.join(os.homedir(), 'Applications', 'Antigravity.app'),
             path.join(os.homedir(), 'Applications', 'Antigravity IDE.app')
         ];
+        const appInfos = [];
         for (const cand of macCandidates) {
             const asarPath = path.join(cand, 'Contents', 'Resources', 'app.asar');
             if (fs.existsSync(asarPath)) {
                 const appSupport = path.join(os.homedir(), 'Library', 'Application Support', 'Antigravity');
-                return { appPath: cand, asarPath, appSupport };
+                appInfos.push({ appPath: cand, asarPath, appSupport, architecture: 'asar' });
             }
         }
+        // Windows 支援同時監控多套安裝；macOS 維持既有的單一目標行為。
+        if (appInfos.length > 0) return [appInfos[0]];
         // 若尚未生成 app.asar 亦回傳預設路徑以利建置
         const defaultApp = '/Applications/Antigravity.app';
         const defaultAsar = path.join(defaultApp, 'Contents', 'Resources', 'app.asar');
         const defaultSupport = path.join(os.homedir(), 'Library', 'Application Support', 'Antigravity');
-        return { appPath: defaultApp, asarPath: defaultAsar, appSupport: defaultSupport };
+        return [{ appPath: defaultApp, asarPath: defaultAsar, appSupport: defaultSupport, architecture: 'asar' }];
     } else if (IS_WIN) {
-        const candidates = [
-            process.env.ANTIGRAVITY_INSTALL_DIR,
-            process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs', 'antigravity') : null,
-            'C:\\Program Files\\Antigravity',
-            'C:\\Programs\\Antigravity'
-        ].filter(Boolean);
-
-        for (const c of candidates) {
-            const asar = path.join(c, 'resources', 'app.asar');
-            if (fs.existsSync(asar)) {
-                const appSupport = process.env.APPDATA ? path.join(process.env.APPDATA, 'Antigravity') : null;
-                return { appPath: c, asarPath: asar, appSupport };
-            }
-        }
-        return { appPath: null, asarPath: null, appSupport: null };
+        const installations = discoverInstallations(getDefaultWindowsCandidates(process.env));
+        return buildWindowsWatcherTargets(installations, process.env);
     }
-    return { appPath: null, asarPath: null, appSupport: null };
+    return [];
 }
 
 function cleanElectronCache(appSupportDir) {
@@ -116,14 +112,39 @@ function cleanElectronCache(appSupportDir) {
 }
 
 function checkAndLocalizeApp(appInfo) {
-    const { appPath, asarPath, appSupport } = appInfo;
+    const { appPath, asarPath, appSupport, architecture } = appInfo;
+    if (architecture === 'legacy') {
+        if (isWatcherTargetLocalized(appInfo)) return false;
+
+        log(`⚡ 偵測到 ${path.basename(appPath)} 尚未套用繁體中文，啟動 IDE 相容流程...`);
+        const engineScript = path.join(DIR, 'localization_engine.js');
+        try {
+            execFileSync(
+                process.execPath,
+                [engineScript, '--tw', '--brand-title', 'english', '--install-dir', appPath, '--no-kill'],
+                { cwd: DIR, stdio: 'inherit', env: getCustomEnv() },
+            );
+        } catch (error) {
+            log(`❌ ${path.basename(appPath)} 繁體中文化失敗: ${error.message}`);
+            return false;
+        }
+
+        if (!isWatcherTargetLocalized(appInfo)) {
+            log(`❌ ${path.basename(appPath)} 完成執行後仍未通過繁中完整性檢查。`);
+            return false;
+        }
+        cleanElectronCache(appSupport);
+        log(`🎉 ${path.basename(appPath)} 已完成繁體中文化，請重啟應用程式生效。`);
+        notify('Antigravity 自動中文化', `${path.basename(appPath)} 已完成繁體中文化，請重啟應用程式生效。`);
+        return true;
+    }
+
     if (!asarPath || !fs.existsSync(asarPath)) {
         return false;
     }
 
-    const asarBuf = fs.readFileSync(asarPath);
     const needle = Buffer.from('命令選擇區', 'utf8');
-    const isLocalized = asarBuf.indexOf(needle) !== -1;
+    const isLocalized = isWatcherTargetLocalized(appInfo);
 
     if (!isLocalized) {
         log('⚡ 偵測到 Antigravity 官方更新（新版英文官方包），啟動自動中文化流程...');
@@ -214,11 +235,9 @@ function main() {
         return;
     }
     try {
-        const appInfo = getAppInfo();
-        const appChanged = checkAndLocalizeApp(appInfo);
-
-        if (!appChanged) {
-            // 靜默安全日誌
+        const appInfos = getAppInfos();
+        for (const appInfo of appInfos) {
+            checkAndLocalizeApp(appInfo);
         }
     } catch (err) {
         log(`❌ 自動中文化監控執行異常: ${err.message}`);

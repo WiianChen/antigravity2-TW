@@ -43,6 +43,10 @@ jobs:
           }
           Write-Host "PowerShell script syntax check passed!"
 
+      - name: Test Windows multi-install discovery and IDE localization
+        shell: pwsh
+        run: node --test tests/windows-multi-install.test.js
+
       - name: Validate localization dictionaries JSON integrity via Node.js
         shell: pwsh
         run: |
